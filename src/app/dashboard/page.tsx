@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LogOut, Zap, RotateCcw, ChevronRight } from 'lucide-react'
 import { Timestamp } from 'firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUserData } from '@/contexts/UserDataContext'
@@ -12,6 +11,7 @@ import { StreakRing } from '@/components/StreakRing'
 import { getSmokeFreeStats, getHealthMilestones, formatRupiah, formatNumber, getSalam, motivasiQuotes } from '@/lib/utils'
 import { badges } from '@/lib/badges'
 import { getCravings, CravingLog } from '@/lib/firestore'
+import { InsightCard } from '@/components/InsightCard'
 
 const strategiMengatasi = [
   { judul: 'Tarik napas dalam', desc: '4 hitungan masuk · 4 tahan · 4 keluar', ikon: '🌬️' },
@@ -91,8 +91,8 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-12 pb-2 relative z-10">
         <div>
-          <p className="text-xs font-600" style={{ color: 'var(--text-3)' }}>{getSalam()},</p>
-          <h1 className="text-xl font-800" style={{ fontFamily: 'var(--font-nunito)', color: 'var(--text)' }}>
+          <p className="text-sm font-600" style={{ color: 'var(--text-3)' }}>{getSalam()},</p>
+          <h1 className="text-2xl font-800" style={{ fontFamily: 'var(--font-nunito)', color: 'var(--text)' }}>
             {firstName} 👋
           </h1>
         </div>
@@ -114,9 +114,9 @@ export default function DashboardPage() {
             </button>
           ) : (
             <button onClick={() => logout().then(() => router.push('/'))}
-              className="w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90"
+              className="px-3 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90"
               style={{ background: 'var(--card)', boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border)', color: 'var(--text-3)' }}>
-              <LogOut size={15} />
+              <span className="text-xs font-700" style={{ fontFamily: 'var(--font-nunito)' }}>Keluar</span>
             </button>
           )}
         </div>
@@ -150,12 +150,12 @@ export default function DashboardPage() {
             onClick={() => { setResetDate(new Date().toISOString().split('T')[0]); setShowReset(true) }}
             className="mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-700 transition-all active:scale-95"
             style={{ color: 'var(--text-3)', fontFamily: 'var(--font-nunito)', background: 'var(--border)' }}>
-            <RotateCcw size={11} />
+            <span>↺</span>
             Mulai ulang
           </motion.button>
         </motion.div>
 
-        {/* Stats — slightly asymmetric layout */}
+        {/* Stats - slightly asymmetric layout */}
         <div className="grid grid-cols-2 gap-3">
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
             <div className="rounded-[24px] p-5 h-full" style={{ background: 'var(--amber-pale)', border: '1.5px solid var(--amber-tint)' }}>
@@ -165,7 +165,7 @@ export default function DashboardPage() {
                 {formatRupiah(stats.moneySaved)}
               </div>
               <div className="text-xs font-700 mt-1.5" style={{ color: 'var(--text-2)' }}>Uang Tersimpan</div>
-              <div className="text-[10px] font-600 mt-0.5" style={{ color: 'var(--text-3)' }}>
+              <div className="text-xs font-600 mt-0.5" style={{ color: 'var(--text-3)' }}>
                 {formatRupiah(stats.moneySaved / Math.max(1, stats.diffDays) * 30)} / bulan
               </div>
             </div>
@@ -179,12 +179,17 @@ export default function DashboardPage() {
                 {formatNumber(stats.cigarettesAvoided)}
               </div>
               <div className="text-xs font-700 mt-1.5" style={{ color: 'var(--text-2)' }}>Rokok Dihindari</div>
-              <div className="text-[10px] font-600 mt-0.5" style={{ color: 'var(--text-3)' }}>
+              <div className="text-xs font-600 mt-0.5" style={{ color: 'var(--text-3)' }}>
                 {stats.hoursLife} jam umur kembali
               </div>
             </div>
           </motion.div>
         </div>
+
+        {/* Insight card - rotating smoking facts */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }}>
+          <InsightCard />
+        </motion.div>
 
         {/* Craving SOS button */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}>
@@ -218,8 +223,7 @@ export default function DashboardPage() {
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}>
             <div className="rounded-[24px] p-5" style={{ background: 'var(--card)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)' }}>
               <div className="flex items-center gap-2 mb-3">
-                <Zap size={13} style={{ color: 'var(--green-mid)' }} />
-                <span className="text-[10px] font-800 tracking-widest uppercase"
+                <span className="text-xs font-800 tracking-widest uppercase"
                   style={{ fontFamily: 'var(--font-nunito)', color: 'var(--green-mid)' }}>
                   Milestone Berikutnya
                 </span>
@@ -458,7 +462,7 @@ function ProgressSnippet({
             <span className="text-sm font-800" style={{ fontFamily: 'var(--font-nunito)', color: 'var(--text)' }}>Perkembangan</span>
           </div>
           <div className="flex items-center gap-1 text-xs font-700" style={{ color: 'var(--green-mid)' }}>
-            Lihat detail <ChevronRight size={13} />
+            Lihat detail <span>→</span>
           </div>
         </button>
 
@@ -581,7 +585,7 @@ function CravingSnippet() {
           <button onClick={() => router.push('/cravings')}
             className="flex items-center gap-1 text-xs font-700 active:opacity-70 transition-opacity"
             style={{ color: 'var(--green-mid)' }}>
-            Lihat semua <ChevronRight size={13} />
+            Lihat semua <span>→</span>
           </button>
         </div>
 
@@ -685,7 +689,7 @@ function AchievementSection({ stats }: { stats: ReturnType<typeof getSmokeFreeSt
             </span>
           </div>
           <div className="flex items-center gap-1 text-xs font-700" style={{ color: 'var(--green-mid)' }}>
-            Lihat semua <ChevronRight size={13} />
+            Lihat semua <span>→</span>
           </div>
         </button>
 
@@ -732,7 +736,7 @@ function AchievementSection({ stats }: { stats: ReturnType<typeof getSmokeFreeSt
           </div>
         )}
 
-        {/* Badge strip — horizontal scroll */}
+        {/* Badge strip - horizontal scroll */}
         <div className="pb-5">
           <div className="flex gap-2.5 overflow-x-auto px-5 pb-1 no-scrollbar">
             {badges.map((badge, i) => {

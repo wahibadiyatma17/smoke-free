@@ -12,7 +12,7 @@ const nunito = Nunito({
 })
 
 export const metadata: Metadata = {
-  title: 'Napas Baru — Bebas dari Rokok',
+  title: 'Napas Baru: Bebas dari Rokok',
   description: 'Lacak perjalanan bebas rokokmu, hemat uang, dan dapatkan kembali kesehatanmu satu hari demi satu hari.',
   appleWebApp: {
     capable: true,

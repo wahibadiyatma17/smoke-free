@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 const DAYS = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
 
@@ -14,7 +13,7 @@ const MONTHS_ID = [
 interface CalendarPickerProps {
   value: string       // ISO date string yyyy-mm-dd
   onChange: (date: string) => void
-  max: string         // ISO date string — dates after this are disabled
+  max: string         // ISO date string, dates after this are disabled
 }
 
 function toLocal(isoStr: string) {
@@ -86,8 +85,8 @@ export default function CalendarPicker({ value, onChange, max }: CalendarPickerP
   const statusText = isFuture
     ? '🚀 Mulai perjalananmu!'
     : isToday
-    ? '✨ Mulai hari ini — langkah pertama terbesar!'
-    : `🏆 ${daysSinceSel} hari bebas rokok — luar biasa!`
+    ? '✨ Mulai hari ini. Langkah pertama terbesar!'
+    : `🏆 ${daysSinceSel} hari bebas rokok. Luar biasa!`
 
   const quickSelects = [
     { label: 'Hari ini',      emoji: '✨', offset: 0 },
@@ -121,7 +120,7 @@ export default function CalendarPicker({ value, onChange, max }: CalendarPickerP
               border: '1.5px solid',
               borderColor: canGoPrev ? 'var(--green-tint)' : 'var(--border)',
             }}>
-            <ChevronLeft size={16} />
+            <span className="text-lg font-600">‹</span>
           </button>
 
           <AnimatePresence mode="wait">
@@ -152,7 +151,7 @@ export default function CalendarPicker({ value, onChange, max }: CalendarPickerP
               border: '1.5px solid',
               borderColor: canGoNext ? 'var(--green-tint)' : 'var(--border)',
             }}>
-            <ChevronRight size={16} />
+            <span className="text-lg font-600">›</span>
           </button>
         </div>
 

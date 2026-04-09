@@ -30,7 +30,7 @@ export function StreakRing({ days, hours, minutes, seconds }: StreakRingProps) {
           <circle cx={size/2} cy={size/2} r={radius}
             fill="none" stroke="var(--border)" strokeWidth={strokeWidth} />
 
-          {/* Progress arc — coral→green gradient */}
+          {/* Progress arc - coral to green gradient */}
           <motion.circle
             cx={size/2} cy={size/2} r={radius}
             fill="none"

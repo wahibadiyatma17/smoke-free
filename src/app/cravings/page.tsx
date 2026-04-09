@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, Check } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { Timestamp } from 'firebase/firestore'
@@ -104,7 +103,7 @@ export default function CravingsPage() {
           <button onClick={() => setShowForm(true)}
             className="w-11 h-11 rounded-2xl flex items-center justify-center transition-all active:scale-90 font-800 text-xl"
             style={{ background: 'var(--green)', color: 'white', boxShadow: '0 4px 16px rgba(61,190,143,0.3)' }}>
-            <Plus size={20} strokeWidth={2.5} />
+            <span className="text-2xl font-300 leading-none">+</span>
           </button>
         </div>
       </div>
@@ -155,8 +154,8 @@ export default function CravingsPage() {
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                   style={{ background: c.resisted ? 'var(--green-pale)' : 'var(--coral-pale)' }}>
                   {c.resisted
-                    ? <Check size={16} strokeWidth={2.5} style={{ color: 'var(--green-mid)' }} />
-                    : <X size={16} strokeWidth={2.5} style={{ color: 'var(--coral)' }} />
+                    ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--green-mid)' }}><path d="M20 6L9 17l-5-5"/></svg>
+                    : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--coral)' }}><path d="M18 6L6 18M6 6l12 12"/></svg>
                   }
                 </div>
                 <div className="flex-1 min-w-0">
@@ -209,7 +208,7 @@ export default function CravingsPage() {
                 <button onClick={() => setShowForm(false)}
                   className="w-8 h-8 rounded-full flex items-center justify-center"
                   style={{ background: 'var(--border)', color: 'var(--text-2)' }}>
-                  <X size={14} strokeWidth={2.5} />
+                  <span className="text-base leading-none">✕</span>
                 </button>
               </div>
 

@@ -77,7 +77,7 @@ export default function AchievementsPage() {
           </div>
         </motion.div>
 
-        {/* Unlocked badges — with rotation! */}
+        {/* Unlocked badges - with rotation! */}
         {terbuka.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-3">
@@ -119,7 +119,7 @@ export default function AchievementsPage() {
           </div>
         )}
 
-        {/* Locked badges — flat & muted */}
+        {/* Locked badges - flat & muted */}
         {terkunci.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-3">

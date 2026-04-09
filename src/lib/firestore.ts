@@ -73,7 +73,7 @@ export async function logCraving(uid: string, data: Omit<CravingLog, 'uid' | 'ti
 
 export async function getCravings(uid: string): Promise<CravingLog[]> {
   const cravingsRef = collection(db, 'cravings')
-  // Simple single-field query — no composite index needed
+  // Simple single-field query - no composite index needed
   const q = query(cravingsRef, where('uid', '==', uid))
   const snapshot = await getDocs(q)
   const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as CravingLog))

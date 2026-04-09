@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronRight } from 'lucide-react'
 import { Timestamp } from 'firebase/firestore'
 import CalendarPicker from '@/components/CalendarPicker'
 import { useAuth } from '@/contexts/AuthContext'
@@ -96,10 +95,10 @@ export default function OnboardingPage() {
       {/* Progress */}
       <div className="relative z-10 mb-10">
         <div className="flex justify-between items-center mb-2.5">
-          <span className="text-xs font-700" style={{ color: 'var(--text-3)' }}>
+          <span className="text-sm font-700" style={{ color: 'var(--text-3)' }}>
             Langkah {step + 1} dari {steps.length}
           </span>
-          <span className="text-xs font-800" style={{ color: 'var(--green-mid)' }}>
+          <span className="text-sm font-800" style={{ color: 'var(--green-mid)' }}>
             {Math.round(progress)}%
           </span>
         </div>
@@ -128,15 +127,15 @@ export default function OnboardingPage() {
               style={{ fontFamily: 'var(--font-fraunces)', fontSize: '1.75rem', fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.02em' }}>
               {title}
             </h2>
-            <p className="text-sm font-500" style={{ color: 'var(--text-2)' }}>{sub}</p>
+            <p className="text-base font-500" style={{ color: 'var(--text-2)' }}>{sub}</p>
           </motion.div>
 
-          {/* Step 0 — Tanggal */}
+          {/* Step 0 - Tanggal */}
           {step === 0 && (
             <CalendarPicker value={quitDate} onChange={setQuitDate} max={today} />
           )}
 
-          {/* Step 1 — Jumlah batang */}
+          {/* Step 1 - Jumlah batang */}
           {step === 1 && (
             <div className="space-y-6">
               <div className="flex items-center justify-center gap-5">
@@ -160,7 +159,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Step 2 — Harga */}
+          {/* Step 2 - Harga */}
           {step === 2 && (
             <div className="space-y-4">
               <div className="relative rounded-2xl overflow-hidden"
@@ -193,7 +192,7 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* Step 3 — Motivasi */}
+          {/* Step 3 - Motivasi */}
           {step === 3 && (
             <div className="grid grid-cols-2 gap-2.5">
               {motivasi.map(({ id, label, icon }) => {
@@ -248,7 +247,7 @@ export default function OnboardingPage() {
           }}>
           {saving
             ? <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-            : isLast ? '🚀 Mulai Sekarang!' : <><span>Lanjut</span><ChevronRight size={16} /></>
+            : isLast ? '🚀 Mulai Sekarang!' : <><span>Lanjut</span><span>→</span></>
           }
         </button>
       </div>
