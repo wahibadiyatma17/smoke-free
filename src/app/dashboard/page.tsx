@@ -10,16 +10,78 @@ import { Navigation } from '@/components/Navigation'
 import { StreakRing } from '@/components/StreakRing'
 import { getSmokeFreeStats, getHealthMilestones, formatRupiah, formatNumber, getSalam, motivasiQuotes } from '@/lib/utils'
 import { badges } from '@/lib/badges'
-import { getCravings, CravingLog } from '@/lib/firestore'
 import { InsightCard } from '@/components/InsightCard'
 
-const strategiMengatasi = [
-  { judul: 'Tarik napas dalam', desc: '4 hitungan masuk · 4 tahan · 4 keluar', ikon: '🌬️' },
-  { judul: 'Minum air putih',   desc: 'Segelas air dingin meredam keinginan',   ikon: '💧' },
-  { judul: 'Jalan kaki',        desc: 'Bahkan 5 menit mengubah suasana hati',   ikon: '🚶' },
-  { judul: 'Hubungi seseorang', desc: 'Alihkan pikiran dengan percakapan',       ikon: '📞' },
-  { judul: 'Permen karet',      desc: 'Buat mulutmu sibuk dengan yang sehat',    ikon: '🍬' },
-  { judul: 'Meditasi 2 menit',  desc: 'Duduk tenang dan fokus pada napas',      ikon: '🧘' },
+type TipItem = { judul: string; desc: string; ikon: string }
+type TipCategory = { label: string; ikon: string; tips: TipItem[] }
+
+const tipCategories: TipCategory[] = [
+  {
+    label: 'Pernapasan', ikon: '🌬️',
+    tips: [
+      { judul: 'Napas Kotak',       desc: 'Hirup 4 detik · tahan 4 · hembuskan 4 · tahan 4. Ulangi 5x',  ikon: '⬜' },
+      { judul: 'Teknik 4-7-8',      desc: 'Hirup 4 detik, tahan 7, hembuskan perlahan 8 detik',           ikon: '🔢' },
+      { judul: 'Napas Diafragma',   desc: 'Kembangkan perut saat hirup, perlahan kempis saat hembuskan',  ikon: '🫁' },
+      { judul: 'Napas Dalam',       desc: '4 hitungan masuk · 4 tahan · 4 keluar',                        ikon: '🌬️' },
+      { judul: 'Visualisasi Ombak', desc: 'Bayangkan keinginan seperti ombak — datang lalu pergi',        ikon: '🌊' },
+      { judul: 'Napas Sadar',       desc: 'Tutup mata, fokus penuh pada setiap napas selama 2 menit',     ikon: '🧘' },
+    ],
+  },
+  {
+    label: 'Aktivitas', ikon: '🏃',
+    tips: [
+      { judul: 'Jalan Kaki',        desc: 'Bahkan 5 menit di luar mengubah suasana hati',                 ikon: '🚶' },
+      { judul: 'Naiki Tangga',      desc: 'Aerobik singkat yang langsung menurunkan keinginan',            ikon: '🪜' },
+      { judul: 'Peregangan',        desc: 'Regangkan tubuh 3 menit untuk melepaskan ketegangan',           ikon: '🤸' },
+      { judul: 'Jumping Jacks',     desc: '20 kali lompat untuk meningkatkan endorfin alami',              ikon: '⚡' },
+      { judul: 'Cuci Muka',         desc: 'Sensasi air dingin di wajah memutus siklus keinginan',          ikon: '💦' },
+      { judul: 'Yoga Singkat',      desc: 'Gerakan sederhana meningkatkan oksigen ke otak',                ikon: '🙆' },
+    ],
+  },
+  {
+    label: 'Distraksi', ikon: '🎯',
+    tips: [
+      { judul: 'Permen Karet',      desc: 'Buat mulutmu sibuk dengan pilihan sehat',                       ikon: '🍬' },
+      { judul: 'Aktivitas Tangan',  desc: 'Menulis, menggambar, atau bermain puzzle',                      ikon: '✏️' },
+      { judul: 'Benda di Tangan',   desc: 'Pegang pulpen, koin, atau benda kecil untuk tangan sibuk',      ikon: '🖊️' },
+      { judul: 'Pindah Tempat',     desc: 'Ganti suasana — pergi ke ruangan lain atau keluar sebentar',    ikon: '🚪' },
+      { judul: '5 Hal di Sekitar',  desc: 'Perhatikan 5 benda di sekitarmu — teknik grounding',            ikon: '👀' },
+      { judul: 'Musik Favorit',     desc: 'Putar lagu kesukaan dan fokus pada melodi',                     ikon: '🎵' },
+    ],
+  },
+  {
+    label: 'Minuman', ikon: '💧',
+    tips: [
+      { judul: 'Air Dingin',        desc: 'Segelas air es secara perlahan meredam keinginan',              ikon: '💧' },
+      { judul: 'Teh Herbal',        desc: 'Chamomile atau peppermint untuk ketenangan instan',             ikon: '🍵' },
+      { judul: 'Wortel/Seledri',    desc: 'Camilan renyah untuk menyibukkan mulut',                        ikon: '🥕' },
+      { judul: 'Susu Dingin',       desc: 'Penelitian: susu membuat rasa rokok tidak enak',                ikon: '🥛' },
+      { judul: 'Jus Lemon',         desc: 'Rasa asam kuat memutus fokus pada keinginan',                   ikon: '🍋' },
+      { judul: 'Camilan Sehat',     desc: 'Stabilkan gula darah dengan camilan bergizi kecil',             ikon: '🍎' },
+    ],
+  },
+  {
+    label: 'Mindfulness', ikon: '🧘',
+    tips: [
+      { judul: 'Meditasi 2 Menit',  desc: 'Duduk tenang dan fokus penuh pada napas',                       ikon: '🧘' },
+      { judul: 'Urge Surfing',      desc: 'Amati keinginan tanpa menghakimi — biarkan berlalu sendiri',    ikon: '🏄' },
+      { judul: 'Scan Tubuh',        desc: 'Sadari sensasi fisik dari kepala ke kaki tanpa reaksi',         ikon: '🔍' },
+      { judul: 'Afirmasi',          desc: '"Keinginan ini akan berlalu. Aku lebih kuat dari ini."',        ikon: '💬' },
+      { judul: 'Hadir Penuh',       desc: 'Perhatikan 5 hal dilihat, 4 disentuh, 3 didengar',              ikon: '🌟' },
+      { judul: 'Terima Keinginan',  desc: 'Akui keinginan itu ada — tidak melawan justru mempercepatnya', ikon: '🤝' },
+    ],
+  },
+  {
+    label: 'Sosial', ikon: '🤝',
+    tips: [
+      { judul: 'Hubungi Seseorang', desc: 'Alihkan pikiran dengan percakapan',                             ikon: '📞' },
+      { judul: 'Kirim Pesan',       desc: 'Beritahu temanmu bahwa kamu sedang berjuang',                   ikon: '💬' },
+      { judul: 'Baca Motivasi',     desc: 'Buka catatan alasanmu berhenti merokok',                        ikon: '📖' },
+      { judul: 'Tonton Video Lucu', desc: 'Tawa adalah pengalih keinginan yang efektif',                   ikon: '😂' },
+      { judul: 'Ingat Alasanmu',    desc: 'Bayangkan dirimu sehat dan bebas rokok di masa depan',          ikon: '🎯' },
+      { judul: 'Bantu Orang Lain',  desc: 'Mengalihkan diri ke aktivitas sosial memutus siklus craving',   ikon: '🫂' },
+    ],
+  },
 ]
 
 export default function DashboardPage() {
@@ -30,6 +92,7 @@ export default function DashboardPage() {
   const [quoteIndex, setQuoteIndex] = useState(0)
   const [showCraving, setShowCraving] = useState(false)
   const [berhasil, setBerhasil] = useState(false)
+  const [randomTips, setRandomTips] = useState<TipItem[]>([])
   const [showReset, setShowReset] = useState(false)
   const [resetDate, setResetDate] = useState(new Date().toISOString().split('T')[0])
   const [resetting, setResetting] = useState(false)
@@ -193,7 +256,13 @@ export default function DashboardPage() {
 
         {/* Craving SOS button */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}>
-          <button onClick={() => setShowCraving(true)}
+          <button onClick={() => {
+              const allTips = tipCategories.flatMap(c => c.tips)
+              const shuffled = allTips.sort(() => Math.random() - 0.5).slice(0, 6)
+              setRandomTips(shuffled)
+              setBerhasil(false)
+              setShowCraving(true)
+            }}
             className="w-full flex items-center gap-4 p-5 rounded-[24px] transition-all active:scale-[0.97] text-left group"
             style={{
               background: 'var(--coral-pale)',
@@ -257,11 +326,6 @@ export default function DashboardPage() {
         {/* Achievement gamification section */}
         <AchievementSection stats={stats} />
 
-        {/* Progress snippet */}
-        <ProgressSnippet stats={stats} quitDate={quitDate} />
-
-        {/* Cravings snippet */}
-        <CravingSnippet />
       </div>
 
       {/* Craving modal */}
@@ -321,8 +385,8 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-2.5 mt-5 mb-5">
-                      {strategiMengatasi.map((s, i) => (
-                        <motion.div key={i}
+                      {randomTips.map((s, i) => (
+                        <motion.div key={s.judul}
                           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: i * 0.05 }}
                           className="rounded-2xl p-3.5"
@@ -428,239 +492,6 @@ export default function DashboardPage() {
 
       <Navigation />
     </div>
-  )
-}
-
-/* ─── Progress Snippet ────────────────────────────────────── */
-function ProgressSnippet({
-  stats,
-  quitDate,
-}: {
-  stats: ReturnType<typeof getSmokeFreeStats>
-  quitDate: Date
-}) {
-  const router = useRouter()
-  const milestones = getHealthMilestones(quitDate)
-  const achieved = milestones.filter(m => m.achieved).length
-  const preview = milestones.slice(0, 4)
-
-  const projections = [
-    { period: '1 Bln',  days: 30 },
-    { period: '6 Bln',  days: 180 },
-    { period: '1 Thn',  days: 365 },
-  ]
-
-  return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.42 }}>
-      <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}>
-
-        {/* Header */}
-        <button onClick={() => router.push('/progress')}
-          className="w-full flex items-center justify-between px-5 pt-5 pb-3 active:opacity-70 transition-opacity">
-          <div className="flex items-center gap-2">
-            <span className="text-base">📈</span>
-            <span className="text-sm font-800" style={{ fontFamily: 'var(--font-nunito)', color: 'var(--text)' }}>Perkembangan</span>
-          </div>
-          <div className="flex items-center gap-1 text-xs font-700" style={{ color: 'var(--green-mid)' }}>
-            Lihat detail <span>→</span>
-          </div>
-        </button>
-
-        {/* Savings projection row */}
-        <div className="grid grid-cols-3 gap-2 px-5 pb-4">
-          {projections.map(({ period, days }) => {
-            const amount = (stats.moneySaved / Math.max(1, stats.diffDays)) * days
-            return (
-              <div key={period} className="text-center py-3 rounded-2xl"
-                style={{ background: 'var(--amber-pale)', border: '1px solid var(--amber-tint)' }}>
-                <div className="font-900 text-sm leading-tight"
-                  style={{ fontFamily: 'var(--font-fraunces)', color: 'var(--amber)', letterSpacing: '-0.02em' }}>
-                  {formatRupiah(amount)}
-                </div>
-                <div className="text-[9px] font-700 mt-0.5" style={{ color: 'var(--text-3)' }}>{period}</div>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Health milestones mini-list */}
-        <div className="px-5 pb-5 space-y-2">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-800" style={{ fontFamily: 'var(--font-nunito)', color: 'var(--text-2)' }}>
-              🩺 Pemulihan Kesehatan
-            </span>
-            <span className="text-[10px] font-700 px-2 py-0.5 rounded-full"
-              style={{ background: 'var(--green-pale)', color: 'var(--green-mid)' }}>
-              {achieved}/{milestones.length}
-            </span>
-          </div>
-          {preview.map((m) => (
-            <div key={m.label} className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
-              style={{
-                background: m.achieved ? 'var(--green-pale)' : 'var(--cream)',
-                border: `1px solid ${m.achieved ? 'var(--green-tint)' : 'var(--border)'}`,
-              }}>
-              <span className="text-base flex-shrink-0"
-                style={{ filter: m.achieved ? 'none' : 'grayscale(1)', opacity: m.achieved ? 1 : 0.35 }}>
-                {m.icon}
-              </span>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-700 truncate"
-                  style={{ fontFamily: 'var(--font-nunito)', color: m.achieved ? 'var(--green-dark)' : 'var(--text-3)' }}>
-                  {m.label}
-                </div>
-                {!m.achieved && m.progress > 0 && (
-                  <div className="mt-1 h-1 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
-                    <motion.div className="h-full rounded-full"
-                      style={{ background: 'linear-gradient(90deg, var(--coral), var(--green))' }}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${m.progress}%` }}
-                      transition={{ duration: 0.8, delay: 0.6 }}
-                    />
-                  </div>
-                )}
-              </div>
-              {m.achieved ? (
-                <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'var(--green)' }}>
-                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5">
-                    <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-              ) : (
-                <span className="text-[10px] font-700 flex-shrink-0" style={{ color: 'var(--text-3)' }}>
-                  {m.progress > 0 ? `${m.progress.toFixed(0)}%` : '🔒'}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-/* ─── Cravings Snippet ────────────────────────────────────── */
-const GUEST_CRAVINGS_KEY = 'smoke_free_guest_cravings'
-
-function loadLocalCravings(): CravingLog[] {
-  try {
-    const raw = typeof window !== 'undefined' ? localStorage.getItem(GUEST_CRAVINGS_KEY) : null
-    if (!raw) return []
-    const { Timestamp } = require('firebase/firestore')
-    return (JSON.parse(raw) as any[]).map(c => ({
-      ...c,
-      timestamp: Timestamp.fromDate(new Date(c.timestamp)),
-    }))
-  } catch { return [] }
-}
-
-function CravingSnippet() {
-  const router = useRouter()
-  const { user } = useAuth()
-  const [cravings, setCravings] = useState<CravingLog[]>([])
-
-  useEffect(() => {
-    if (user) {
-      getCravings(user.uid).then(data => setCravings(data.slice(0, 3)))
-    } else {
-      setCravings(loadLocalCravings().slice(0, 3))
-    }
-  }, [user])
-
-  const total = cravings.length
-  const totalBerhasil = cravings.filter(c => c.resisted).length
-  const rate = total > 0 ? Math.round((totalBerhasil / total) * 100) : null
-
-  return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.46 }}>
-      <div className="rounded-[24px] overflow-hidden" style={{ background: 'var(--card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}>
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-base">🌬️</span>
-            <span className="text-sm font-800" style={{ fontFamily: 'var(--font-nunito)', color: 'var(--text)' }}>Keinginan</span>
-          </div>
-          <button onClick={() => router.push('/cravings')}
-            className="flex items-center gap-1 text-xs font-700 active:opacity-70 transition-opacity"
-            style={{ color: 'var(--green-mid)' }}>
-            Lihat semua <span>→</span>
-          </button>
-        </div>
-
-        {/* Stats row */}
-        {rate !== null ? (
-          <div className="grid grid-cols-3 gap-2 px-5 pb-4">
-            {[
-              { label: 'Dicatat',        value: total,           color: 'var(--text)' },
-              { label: 'Berhasil',       value: totalBerhasil,   color: 'var(--green-mid)' },
-              { label: 'Tingkat sukses', value: `${rate}%`,      color: 'var(--green-mid)' },
-            ].map(s => (
-              <div key={s.label} className="rounded-2xl p-3 text-center"
-                style={{ background: 'var(--cream)', border: '1px solid var(--border)' }}>
-                <div className="font-900 text-lg leading-none"
-                  style={{ fontFamily: 'var(--font-fraunces)', color: s.color, letterSpacing: '-0.02em' }}>
-                  {s.value}
-                </div>
-                <div className="text-[9px] font-700 mt-1" style={{ color: 'var(--text-3)' }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-        ) : null}
-
-        {/* Recent entries */}
-        {cravings.length > 0 ? (
-          <div className="px-5 pb-4 space-y-2">
-            {cravings.slice(0, 2).map(c => (
-              <div key={c.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-                style={{
-                  background: c.resisted ? 'var(--green-pale)' : 'var(--coral-pale)',
-                  border: `1px solid ${c.resisted ? 'var(--green-tint)' : 'var(--coral-tint)'}`,
-                }}>
-                <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ background: c.resisted ? 'var(--green)' : 'var(--coral)' }}>
-                  {c.resisted
-                    ? <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5"><path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    : <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                  }
-                </div>
-                <span className="text-xs font-700 flex-1" style={{ fontFamily: 'var(--font-nunito)', color: 'var(--text-2)' }}>
-                  {c.trigger}
-                </span>
-                <div className="flex gap-0.5 flex-shrink-0">
-                  {Array.from({ length: 5 }).map((_, j) => (
-                    <div key={j} className="w-1 h-2.5 rounded-sm"
-                      style={{ background: j < Math.ceil(c.intensity / 2) ? 'var(--coral)' : 'var(--border)' }} />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="px-5 pb-5 text-center">
-            <p className="text-xs font-600" style={{ color: 'var(--text-3)' }}>Belum ada keinginan dicatat</p>
-          </div>
-        )}
-
-        {/* Quick log button */}
-        <div className="px-5 pb-5">
-          <button onClick={() => router.push('/cravings')}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-700 transition-all active:scale-[0.97]"
-            style={{
-              background: 'var(--coral-pale)',
-              border: '1.5px solid var(--coral-tint)',
-              color: 'var(--coral-mid)',
-              fontFamily: 'var(--font-nunito)',
-            }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M12 5v14M5 12h14" strokeLinecap="round"/>
-            </svg>
-            Catat Keinginan Sekarang
-          </button>
-        </div>
-      </div>
-    </motion.div>
   )
 }
 
