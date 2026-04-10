@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import { Nunito } from 'next/font/google'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { UserDataProvider } from '@/contexts/UserDataContext'
+import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
 
 const nunito = Nunito({
   subsets: ['latin'],
@@ -14,10 +15,22 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   title: 'Napas Baru: Bebas dari Rokok',
   description: 'Lacak perjalanan bebas rokokmu, hemat uang, dan dapatkan kembali kesehatanmu satu hari demi satu hari.',
+  manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'Napas Baru',
+    startupImage: '/icons/icon.svg',
+  },
+  icons: {
+    icon: [
+      { url: '/icons/icon.svg', type: 'image/svg+xml' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
   },
 }
 
@@ -35,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={nunito.variable}>
         <AuthProvider>
           <UserDataProvider>
+            <ServiceWorkerRegistration />
             <div className="mx-auto max-w-[430px] min-h-dvh relative">
               {children}
             </div>
