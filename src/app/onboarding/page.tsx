@@ -63,6 +63,7 @@ export default function OnboardingPage() {
           ...profileData,
         })
         await refreshProfile()
+        localStorage.setItem('smoke_free_onboarding_done', '1')
       } else {
         saveLocalProfile({
           displayName: null,

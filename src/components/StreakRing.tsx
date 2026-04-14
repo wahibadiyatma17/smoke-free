@@ -46,8 +46,8 @@ export function StreakRing({ days, hours, minutes, seconds }: StreakRingProps) {
           {/* Animated dot at tip */}
           {dayProgress > 0.01 && (
             <motion.circle
-              cx={size/2 + radius * Math.cos(-Math.PI/2 + dayProgress * 2 * Math.PI)}
-              cy={size/2 + radius * Math.sin(-Math.PI/2 + dayProgress * 2 * Math.PI)}
+              cx={size/2 + radius * Math.cos(dayProgress * 2 * Math.PI)}
+              cy={size/2 + radius * Math.sin(dayProgress * 2 * Math.PI)}
               r={6} fill="white"
               stroke="var(--green)" strokeWidth={3}
               initial={{ opacity: 0, scale: 0 }}

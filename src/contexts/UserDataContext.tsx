@@ -6,6 +6,7 @@ import { useAuth } from './AuthContext'
 import { getUserProfile, updateUserProfile, UserProfile } from '@/lib/firestore'
 
 const GUEST_KEY = 'smoke_free_guest_profile'
+const ONBOARDING_KEY = 'smoke_free_onboarding_done'
 
 interface UserDataContextType {
   profile: UserProfile | null
@@ -80,11 +81,13 @@ export function UserDataProvider({ children }: { children: React.ReactNode }) {
       updatedAt: now,
     }
     localStorage.setItem(GUEST_KEY, JSON.stringify(serialized))
+    localStorage.setItem(ONBOARDING_KEY, '1')
     setProfile(loadGuestProfile())
   }
 
   const clearLocalProfile = () => {
     localStorage.removeItem(GUEST_KEY)
+    localStorage.removeItem(ONBOARDING_KEY)
     setProfile(null)
   }
 
@@ -109,9 +112,8 @@ export function UserDataProvider({ children }: { children: React.ReactNode }) {
   }
 
   const hasCompletedOnboarding = !!(
-    profile?.quitDate &&
-    profile?.cigarettesPerDay &&
-    profile?.pricePerPack
+    (profile?.quitDate && profile?.cigarettesPerDay && profile?.pricePerPack) ||
+    (typeof window !== 'undefined' && localStorage.getItem(ONBOARDING_KEY))
   )
 
   return (
