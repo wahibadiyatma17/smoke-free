@@ -2,6 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useI18n } from '@/i18n/I18nProvider'
+import type { MessageKey } from '@/i18n/types'
 
 function HomeIcon({ active }: { active: boolean }) {
   return (
@@ -43,14 +45,15 @@ function TrophyIcon({ active }: { active: boolean }) {
 }
 
 const navItems = [
-  { href: '/dashboard',    Icon: HomeIcon,       label: 'Beranda' },
-  { href: '/progress',     Icon: TrendingUpIcon, label: 'Progres' },
-  { href: '/cravings',     Icon: WindIcon,       label: 'Keinginan' },
-  { href: '/achievements', Icon: TrophyIcon,     label: 'Pencapaian' },
+  { href: '/dashboard',    Icon: HomeIcon,       key: 'nav.home' as MessageKey },
+  { href: '/progress',     Icon: TrendingUpIcon, key: 'nav.progress' as MessageKey },
+  { href: '/cravings',     Icon: WindIcon,       key: 'nav.cravings' as MessageKey },
+  { href: '/achievements', Icon: TrophyIcon,     key: 'nav.achievements' as MessageKey },
 ]
 
 export function Navigation() {
   const pathname = usePathname()
+  const { t } = useI18n()
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none">
@@ -58,11 +61,12 @@ export function Navigation() {
         <div
           className="flex items-center justify-around rounded-[28px] px-3 py-2"
           style={{
-            background: 'white',
-            boxShadow: '0 8px 40px rgba(44,31,20,0.14), 0 2px 8px rgba(44,31,20,0.08), 0 0 0 1px rgba(44,31,20,0.05)',
+            background: 'var(--card)',
+            boxShadow: 'var(--shadow-lg)',
+            border: '1px solid var(--border)',
           }}
         >
-          {navItems.map(({ href, Icon, label }) => {
+          {navItems.map(({ href, Icon, key }) => {
             const active = pathname === href
             return (
               <Link key={href} href={href}
@@ -79,7 +83,7 @@ export function Navigation() {
                     color: active ? 'var(--green-mid)' : 'var(--text-3)',
                   }}
                 >
-                  {label}
+                  {t(key)}
                 </span>
               </Link>
             )

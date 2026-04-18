@@ -2,13 +2,18 @@
 
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useI18n } from '@/i18n/I18nProvider'
+import type { Locale } from '@/i18n/types'
 
-const DAYS = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
+const DAYS_BY_LOCALE: Record<Locale, string[]> = {
+  id: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
+  en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+}
 
-const MONTHS_ID = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
-]
+const MONTHS_BY_LOCALE: Record<Locale, string[]> = {
+  id: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'],
+  en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+}
 
 interface CalendarPickerProps {
   value: string       // ISO date string yyyy-mm-dd
@@ -33,14 +38,26 @@ function diffDays(a: Date, b: Date) {
   return Math.round((b.getTime() - a.getTime()) / msPerDay)
 }
 
-const MILESTONES: Record<number, { emoji: string; label: string }> = {
-  0:  { emoji: '✨', label: 'Hari ini' },
-  1:  { emoji: '📅', label: 'Kemarin' },
-  7:  { emoji: '📆', label: '1 minggu' },
-  30: { emoji: '🗓️', label: '1 bulan' },
+const MILESTONES_BY_LOCALE: Record<Locale, Record<number, { icon: string; label: string }>> = {
+  id: {
+    0:  { icon: '✨', label: 'Hari ini' },
+    1:  { icon: '📅', label: 'Kemarin' },
+    7:  { icon: '📆', label: '1 minggu' },
+    30: { icon: '🗓️', label: '1 bulan' },
+  },
+  en: {
+    0:  { icon: '✨', label: 'Today' },
+    1:  { icon: '📅', label: 'Yesterday' },
+    7:  { icon: '📆', label: '1 week' },
+    30: { icon: '🗓️', label: '1 month' },
+  },
 }
 
 export default function CalendarPicker({ value, onChange, max }: CalendarPickerProps) {
+  const { locale } = useI18n()
+  const DAYS = DAYS_BY_LOCALE[locale]
+  const MONTHS = MONTHS_BY_LOCALE[locale]
+  const MILESTONES = MILESTONES_BY_LOCALE[locale]
   const today = toLocal(max)
   const selected = toLocal(value)
 
@@ -82,18 +99,31 @@ export default function CalendarPicker({ value, onChange, max }: CalendarPickerP
   const isFuture = daysSinceSel < 0
   const isToday = daysSinceSel === 0
 
-  const statusText = isFuture
-    ? '🚀 Mulai perjalananmu!'
-    : isToday
-    ? '✨ Mulai hari ini. Langkah pertama terbesar!'
-    : `🏆 ${daysSinceSel} hari bebas rokok. Luar biasa!`
+  const statusText = locale === 'en'
+    ? (isFuture
+        ? '🚀 Start your journey!'
+        : isToday
+        ? '✨ Starting today. The first step is the biggest!'
+        : `🏆 ${daysSinceSel} days free. Amazing!`)
+    : (isFuture
+        ? '🚀 Mulai perjalananmu!'
+        : isToday
+        ? '✨ Mulai hari ini. Langkah pertama terbesar!'
+        : `🏆 ${daysSinceSel} hari bebas. Luar biasa!`)
 
-  const quickSelects = [
-    { label: 'Hari ini',      emoji: '✨', offset: 0 },
-    { label: 'Kemarin',       emoji: '📅', offset: 1 },
-    { label: '1 minggu lalu', emoji: '📆', offset: 7 },
-    { label: '1 bulan lalu',  emoji: '🗓️', offset: 30 },
-  ]
+  const quickSelects = locale === 'en'
+    ? [
+        { label: 'Today',        icon: '✨', offset: 0 },
+        { label: 'Yesterday',    icon: '📅', offset: 1 },
+        { label: '1 week ago',   icon: '📆', offset: 7 },
+        { label: '1 month ago',  icon: '🗓️', offset: 30 },
+      ]
+    : [
+        { label: 'Hari ini',      icon: '✨', offset: 0 },
+        { label: 'Kemarin',       icon: '📅', offset: 1 },
+        { label: '1 minggu lalu', icon: '📆', offset: 7 },
+        { label: '1 bulan lalu',  icon: '🗓️', offset: 30 },
+      ]
 
   const canGoPrev = viewYear > 2020 || (viewYear === 2020 && viewMonth > 0)
   const canGoNext = viewYear < today.getFullYear() || (viewYear === today.getFullYear() && viewMonth < today.getMonth())
@@ -137,7 +167,7 @@ export default function CalendarPicker({ value, onChange, max }: CalendarPickerP
                 color: 'var(--text)',
                 letterSpacing: '-0.02em',
               }}>
-              {MONTHS_ID[viewMonth]} {viewYear}
+              {MONTHS[viewMonth]} {viewYear}
             </motion.span>
           </AnimatePresence>
 
@@ -230,9 +260,9 @@ export default function CalendarPicker({ value, onChange, max }: CalendarPickerP
 
                   {/* Milestone badge */}
                   {hasMilestone && (
-                    <span className="relative z-10 mt-0.5 text-[9px] leading-none"
-                      style={{ fontFamily: 'var(--font-nunito)', color: isSelected ? 'rgba(255,255,255,0.85)' : 'var(--text-3)', fontWeight: 700 }}>
-                      {milestone.emoji}
+                    <span className="relative z-10 mt-0.5 leading-none text-[10px]"
+                      style={{ opacity: isSelected ? 0.9 : 1 }}>
+                      {milestone.icon}
                     </span>
                   )}
                 </button>
@@ -263,7 +293,7 @@ export default function CalendarPicker({ value, onChange, max }: CalendarPickerP
 
       {/* Quick-select chips */}
       <div className="grid grid-cols-2 gap-2">
-        {quickSelects.map(({ label, emoji, offset }) => {
+        {quickSelects.map(({ label, icon, offset }) => {
           const d = new Date()
           d.setDate(d.getDate() - offset)
           const val = toISO(d)
@@ -283,7 +313,7 @@ export default function CalendarPicker({ value, onChange, max }: CalendarPickerP
                 border: `1.5px solid ${active ? 'var(--green-tint)' : 'var(--border)'}`,
                 boxShadow: active ? '0 4px 16px rgba(61,190,143,0.15)' : 'var(--shadow-sm)',
               }}>
-              <span className="text-xl leading-none">{emoji}</span>
+              <span className="text-xl leading-none">{icon}</span>
               <span className="text-xs font-800 leading-tight"
                 style={{
                   fontFamily: 'var(--font-nunito)',
@@ -295,9 +325,9 @@ export default function CalendarPicker({ value, onChange, max }: CalendarPickerP
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="ml-auto text-[10px] font-900 px-1.5 py-0.5 rounded-full"
-                  style={{ background: 'var(--green)', color: 'white', fontFamily: 'var(--font-nunito)' }}>
-                  ✓
+                  className="ml-auto w-5 h-5 rounded-full flex items-center justify-center"
+                  style={{ background: 'var(--green)', color: 'white' }}>
+                  <span className="text-[11px] leading-none">✓</span>
                 </motion.span>
               )}
             </motion.button>

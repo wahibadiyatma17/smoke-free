@@ -1,13 +1,13 @@
 {
-  "name": "Napas Baru: Bebas dari Rokok",
-  "short_name": "Napas Baru",
-  "description": "Lacak perjalanan bebas rokokmu, hemat uang, dan dapatkan kembali kesehatanmu satu hari demi satu hari.",
+  "name": "Breaking the Habit",
+  "short_name": "Breaking the Habit",
+  "description": "Lacak kebiasaan yang ingin kamu tinggalkan. Satu hari pada satu waktu.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#FAF7F0",
-  "theme_color": "#3DBE8F",
+  "theme_color": "#F06B4D",
   "lang": "id",
   "categories": ["health", "lifestyle"],
   "icons": [

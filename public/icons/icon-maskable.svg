@@ -1,29 +1,44 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#4ECFA0;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#1A6B4E;stop-opacity:1" />
+    <linearGradient id="bg" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%"   stop-color="#4338CA"/>
+      <stop offset="50%"  stop-color="#F06B4D"/>
+      <stop offset="100%" stop-color="#F5A523"/>
     </linearGradient>
-    <linearGradient id="leaf" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#C8EFE0;stop-opacity:1" />
+    <linearGradient id="ring" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#FEF6E3"/>
     </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#FFFFFF" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <!-- Full bleed background (no radius - required for maskable) -->
+
+  <!-- Full-bleed background (no radius — OS applies its own mask) -->
   <rect width="512" height="512" fill="url(#bg)"/>
-  <!-- Icon content kept within safe zone (innermost 80% = 205px–307px) -->
-  <!-- Leaf body - centered, scaled to fit safe zone -->
-  <path d="M256 128 C215 128, 165 168, 155 228 C145 288, 168 338, 208 364 C224 374, 240 380, 256 380 C272 380, 288 374, 304 364 C344 338, 367 288, 357 228 C347 168, 297 128, 256 128 Z" fill="url(#leaf)"/>
-  <!-- Center vein -->
-  <line x1="256" y1="140" x2="256" y2="372" stroke="#3DBE8F" stroke-width="9" stroke-linecap="round"/>
-  <!-- Left veins -->
-  <path d="M251 205 C231 196, 204 199, 190 211" stroke="#3DBE8F" stroke-width="6" stroke-linecap="round" fill="none"/>
-  <path d="M251 248 C226 238, 196 241, 179 255" stroke="#3DBE8F" stroke-width="6" stroke-linecap="round" fill="none"/>
-  <path d="M252 291 C233 282, 208 285, 194 297" stroke="#3DBE8F" stroke-width="6" stroke-linecap="round" fill="none"/>
-  <!-- Right veins -->
-  <path d="M261 205 C281 196, 308 199, 322 211" stroke="#3DBE8F" stroke-width="6" stroke-linecap="round" fill="none"/>
-  <path d="M261 248 C286 238, 316 241, 333 255" stroke="#3DBE8F" stroke-width="6" stroke-linecap="round" fill="none"/>
-  <path d="M260 291 C279 282, 304 285, 318 297" stroke="#3DBE8F" stroke-width="6" stroke-linecap="round" fill="none"/>
-  <!-- Stem -->
-  <path d="M256 372 C253 386, 248 394, 244 406" stroke="url(#leaf)" stroke-width="10" stroke-linecap="round" fill="none"/>
+
+  <!-- All content kept inside the inner ~80% safe zone (roughly 51–461)
+       so nothing gets clipped when the platform applies its mask.
+       Ring is slightly smaller than the main icon variant to give extra
+       margin inside the safe zone. -->
+
+  <!-- Soft halo -->
+  <circle cx="256" cy="256" r="140" fill="url(#glow)"/>
+
+  <!-- Broken ring, tighter for maskable safe zone.
+       Coords: at 30° from top (1 o'clock), r=104:
+       x = 256 + 104*sin(30°) = 308, y = 256 - 104*cos(30°) = 166  -->
+  <path d="M 308 166 A 104 104 0 1 1 204 166"
+        stroke="url(#ring)"
+        stroke-width="38"
+        stroke-linecap="round"
+        fill="none"/>
+
+  <!-- Sparkles rising from the break -->
+  <circle cx="256" cy="142" r="12" fill="#FFFFFF"/>
+  <circle cx="222" cy="122" r="7"  fill="#FFFFFF" opacity="0.85"/>
+  <circle cx="290" cy="124" r="6"  fill="#FFFFFF" opacity="0.75"/>
+  <circle cx="240" cy="106" r="4"  fill="#FFFFFF" opacity="0.6"/>
+  <circle cx="275" cy="103" r="4"  fill="#FFFFFF" opacity="0.5"/>
 </svg>

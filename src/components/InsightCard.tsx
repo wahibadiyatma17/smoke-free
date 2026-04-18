@@ -1,26 +1,35 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { smokingFacts, categoryMeta, sourceUrls } from '@/lib/smokingFacts'
+import { useActiveHabit } from '@/habits/useActiveHabit'
+import { useI18n } from '@/i18n/I18nProvider'
 
 function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
 export function InsightCard() {
-  const [fact] = useState(() => pickRandom(smokingFacts))
+  const { config } = useActiveHabit()
+  const { locale, t } = useI18n()
+  const fact = useMemo(
+    () => (config && config.facts.length > 0 ? pickRandom(config.facts) : null),
+    [config],
+  )
   const [showDetail, setShowDetail] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => { setMounted(true) }, [])
 
-  const meta = categoryMeta[fact.category]
-  const factSourceUrl = sourceUrls[fact.source] ?? fact.sourceUrl
+  if (!config || !fact) return null
+
+  const meta = config.categoryMeta[fact.category]
+  if (!meta) return null
+  const factSourceUrl = config.sourceUrls[fact.source] ?? fact.sourceUrl
 
   // Related facts: same category, excluding current, up to 3
-  const related = smokingFacts
+  const related = config.facts
     .filter(f => f.category === fact.category && f.fact !== fact.fact)
     .slice(0, 3)
 
@@ -30,7 +39,7 @@ export function InsightCard() {
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           className="fixed inset-0 z-[60] flex items-end"
-          style={{ background: 'rgba(44,31,20,0.45)', backdropFilter: 'blur(6px)' }}
+          style={{ background: 'var(--overlay)', backdropFilter: 'blur(6px)' }}
           onClick={e => e.target === e.currentTarget && setShowDetail(false)}
         >
           <motion.div
@@ -52,9 +61,9 @@ export function InsightCard() {
                 </span>
               </div>
               <button onClick={() => setShowDetail(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-base font-700"
                 style={{ background: 'var(--border)', color: 'var(--text-2)' }}>
-                <span className="text-base leading-none">✕</span>
+                ✕
               </button>
             </div>
 
@@ -75,7 +84,7 @@ export function InsightCard() {
             <div className="mb-5">
               <p className="text-[10px] font-700 uppercase tracking-widest mb-2"
                 style={{ color: 'var(--text-3)', fontFamily: 'var(--font-nunito)' }}>
-                Tentang {meta.label}
+                {locale === 'en' ? `About ${meta.label}` : `Tentang ${meta.label}`}
               </p>
               <p className="text-sm font-600 leading-relaxed"
                 style={{ fontFamily: 'var(--font-nunito)', color: 'var(--text-2)' }}>
@@ -88,7 +97,7 @@ export function InsightCard() {
               <div className="mb-5">
                 <p className="text-[10px] font-700 uppercase tracking-widest mb-3"
                   style={{ color: 'var(--text-3)', fontFamily: 'var(--font-nunito)' }}>
-                  Fakta lain dalam kategori ini
+                  {locale === 'en' ? 'Other facts in this category' : 'Fakta lain dalam kategori ini'}
                 </p>
                 <div className="space-y-2">
                   {related.map((r, i) => (
@@ -110,7 +119,7 @@ export function InsightCard() {
             <div className="rounded-2xl p-4" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
               <p className="text-[10px] font-700 uppercase tracking-widest mb-2"
                 style={{ color: 'var(--text-3)', fontFamily: 'var(--font-nunito)' }}>
-                Sumber
+                {t('progress.source')}
               </p>
               <a href={factSourceUrl} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5">
@@ -118,7 +127,7 @@ export function InsightCard() {
                   style={{ fontFamily: 'var(--font-nunito)', color: meta.color }}>
                   {fact.source}
                 </span>
-                <span className="text-xs" style={{ color: meta.color }}>↗</span>
+                <span className="text-xs leading-none" style={{ color: meta.color }}>↗</span>
               </a>
               <p className="text-[10px] mt-1 break-all"
                 style={{ color: 'var(--text-3)', fontFamily: 'var(--font-nunito)' }}>
@@ -141,7 +150,7 @@ export function InsightCard() {
           <div className="flex items-center gap-2">
             <span className="text-sm">💡</span>
             <span className="text-xs font-800" style={{ fontFamily: 'var(--font-nunito)', color: 'var(--text)' }}>
-              Tahukah Kamu?
+              {locale === 'en' ? 'Did You Know?' : 'Tahukah Kamu?'}
             </span>
           </div>
         </div>
@@ -183,7 +192,7 @@ export function InsightCard() {
                 padding: 0,
                 cursor: 'pointer',
               }}>
-              Lihat detail
+              {locale === 'en' ? 'See detail' : 'Lihat detail'}
             </button>
           </div>
         </div>

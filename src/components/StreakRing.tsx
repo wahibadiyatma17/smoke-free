@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { useI18n } from '@/i18n/I18nProvider'
 
 interface StreakRingProps {
   days: number
@@ -10,6 +11,7 @@ interface StreakRingProps {
 }
 
 export function StreakRing({ days, hours, minutes, seconds }: StreakRingProps) {
+  const { t } = useI18n()
   const size = 220
   const strokeWidth = 13
   const radius = (size - strokeWidth) / 2
@@ -89,7 +91,7 @@ export function StreakRing({ days, hours, minutes, seconds }: StreakRingProps) {
               className="text-xs font-700 tracking-widest uppercase mt-1"
               style={{ fontFamily: 'var(--font-nunito)', color: 'var(--text-2)' }}
             >
-              {days === 1 ? 'Hari' : 'Hari'}
+              {t('common.hari')}
             </div>
           </motion.div>
         </div>
@@ -103,9 +105,9 @@ export function StreakRing({ days, hours, minutes, seconds }: StreakRingProps) {
         className="flex items-center gap-3 mt-2"
       >
         {[
-          { value: hours, label: 'jam' },
-          { value: minutes, label: 'menit' },
-          { value: seconds, label: 'detik' },
+          { value: hours, label: t('common.jam') },
+          { value: minutes, label: t('common.menit') },
+          { value: seconds, label: t('common.detik') },
         ].map(({ value, label }, i) => (
           <div key={label} className="flex items-center gap-3">
             {i > 0 && (

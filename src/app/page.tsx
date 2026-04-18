@@ -5,11 +5,15 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUserData } from '@/contexts/UserDataContext'
+import { useI18n } from '@/i18n/I18nProvider'
+import LanguageSelector from '@/components/LanguageSelector'
+import ThemeToggle from '@/components/ThemeToggle'
 
 export default function LandingPage() {
   const router = useRouter()
   const { user, loading, signInWithGoogle } = useAuth()
   const { hasCompletedOnboarding, loading: profileLoading } = useUserData()
+  const { t } = useI18n()
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -27,9 +31,9 @@ export default function LandingPage() {
     try { await signInWithGoogle() }
     catch (e: any) {
       setError(
-        e?.code === 'auth/operation-not-allowed' ? 'Login Google belum diaktifkan di Firebase Console.' :
-        e?.code === 'auth/popup-closed-by-user'  ? 'Popup ditutup. Coba lagi.' :
-        e?.message || 'Gagal masuk dengan Google.'
+        e?.code === 'auth/operation-not-allowed' ? t('landing.errorGoogleNotEnabled') :
+        e?.code === 'auth/popup-closed-by-user'  ? t('landing.errorPopupClosed') :
+        e?.message || t('landing.errorGeneric')
       )
       setBusy(false)
     }
@@ -58,7 +62,7 @@ export default function LandingPage() {
         initial={{ opacity: 0 }} animate={{ opacity: 1 }}
         className="flex flex-col flex-1 px-6 pt-14 pb-10 relative z-10"
       >
-        {/* Logo */}
+        {/* Logo + language selector */}
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="flex items-center gap-3 mb-12"
         >
@@ -66,14 +70,18 @@ export default function LandingPage() {
             style={{ background: 'var(--green-pale)', border: '2px solid var(--green-tint)' }}>
             <span className="text-2xl">🌿</span>
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <div className="font-800 text-base tracking-tight"
               style={{ fontFamily: 'var(--font-nunito)', color: 'var(--text)' }}>
-              Napas Baru
+              Breaking the Habit
             </div>
             <div className="text-[11px] font-600" style={{ color: 'var(--text-3)' }}>
-              bebas rokok, selamanya
+              {t('landing.tagline')}
             </div>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <ThemeToggle />
+            <LanguageSelector />
           </div>
         </motion.div>
 
@@ -88,12 +96,12 @@ export default function LandingPage() {
                 color: 'var(--text)',
                 letterSpacing: '-0.025em',
               }}>
-              Setiap napas<br />
-              <em style={{ color: 'var(--green-mid)', fontStyle: 'italic' }}>adalah kamu</em><br />
-              yang menang.
+              {t('landing.heroLine1')}<br />
+              <em style={{ color: 'var(--green-mid)', fontStyle: 'italic' }}>{t('landing.heroLine2')}</em><br />
+              {t('landing.heroLine3')}
             </h1>
             <p className="text-base leading-relaxed mb-8 font-500" style={{ color: 'var(--text-2)' }}>
-              Lacak streak bebas rokokmu, lihat kesehatanmu pulih, dan hemat jutaan rupiah. Satu hari demi satu hari.
+              {t('landing.heroDesc')}
             </p>
           </motion.div>
 
@@ -103,7 +111,7 @@ export default function LandingPage() {
           >
             {[
               { nilai: '11 mnt', label: 'umur kembali tiap batang dihindari', color: 'var(--green)' },
-              { nilai: 'Rp 5 jt', label: 'hemat rata-rata per tahun',         color: 'var(--amber)' },
+              { nilai: 'Rp 5 jt', label: 'hemat rata-rata per tahun',         color: 'var(--amber-strong)' },
               { nilai: '50%',    label: 'risiko jantung turun setelah 1 thn', color: 'var(--coral)' },
             ].map((s, i) => (
               <motion.div key={i}
@@ -138,17 +146,17 @@ export default function LandingPage() {
             )}
           </AnimatePresence>
           <BtnGreen onClick={handleGoogle} loading={busy}>
-            <GoogleIcon /> Masuk dengan Google
+            <GoogleIcon /> {t('landing.signInGoogle')}
           </BtnGreen>
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-            <span className="text-xs font-700" style={{ color: 'var(--text-3)' }}>atau</span>
+            <span className="text-xs font-700" style={{ color: 'var(--text-3)' }}>{t('common.or')}</span>
             <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
           </div>
           <button onClick={() => router.push('/onboarding')}
             className="w-full py-3.5 text-sm font-700 transition-all active:scale-[0.97]"
             style={{ color: 'var(--text-3)', fontFamily: 'var(--font-nunito)' }}>
-            Lanjut tanpa akun →
+            {t('landing.continueWithoutAccount')}
           </button>
         </motion.div>
       </motion.div>

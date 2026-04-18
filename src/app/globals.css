@@ -2,6 +2,40 @@
 @config "../../tailwind.config.js";
 
 /* ─────────────────────────────────────────────────────────── */
+/*  Themed color tokens — @property declarations let custom    */
+/*  property changes interpolate smoothly (habit theme swap).   */
+/* ─────────────────────────────────────────────────────────── */
+@property --cream        { syntax: '<color>'; inherits: true; initial-value: #FAF7F0; }
+@property --card         { syntax: '<color>'; inherits: true; initial-value: #FFFFFF; }
+@property --card-tinted  { syntax: '<color>'; inherits: true; initial-value: #FDF9F3; }
+
+@property --green        { syntax: '<color>'; inherits: true; initial-value: #3DBE8F; }
+@property --green-mid    { syntax: '<color>'; inherits: true; initial-value: #2A9E72; }
+@property --green-dark   { syntax: '<color>'; inherits: true; initial-value: #1A6B4E; }
+@property --green-pale   { syntax: '<color>'; inherits: true; initial-value: #E9F8F1; }
+@property --green-tint   { syntax: '<color>'; inherits: true; initial-value: #C8EFE0; }
+
+@property --coral        { syntax: '<color>'; inherits: true; initial-value: #F06B4D; }
+@property --coral-mid    { syntax: '<color>'; inherits: true; initial-value: #D95A3D; }
+@property --coral-pale   { syntax: '<color>'; inherits: true; initial-value: #FEF0EC; }
+@property --coral-tint   { syntax: '<color>'; inherits: true; initial-value: #FBCFBF; }
+
+@property --amber        { syntax: '<color>'; inherits: true; initial-value: #F5A523; }
+@property --amber-pale   { syntax: '<color>'; inherits: true; initial-value: #FEF6E3; }
+@property --amber-tint   { syntax: '<color>'; inherits: true; initial-value: #FDE8A0; }
+
+@property --lavender     { syntax: '<color>'; inherits: true; initial-value: #8B7FD4; }
+@property --lavender-pale{ syntax: '<color>'; inherits: true; initial-value: #F0EEFF; }
+@property --lavender-tint{ syntax: '<color>'; inherits: true; initial-value: #D8D2FF; }
+
+/* Surface + text tokens — interpolate when dark-mode class toggles */
+@property --text         { syntax: '<color>'; inherits: true; initial-value: #2C1F14; }
+@property --text-2       { syntax: '<color>'; inherits: true; initial-value: #7A6B5D; }
+@property --text-3       { syntax: '<color>'; inherits: true; initial-value: #B5A49A; }
+@property --border       { syntax: '<color>'; inherits: true; initial-value: #EDE6DC; }
+@property --border-mid   { syntax: '<color>'; inherits: true; initial-value: #D9CFBE; }
+
+/* ─────────────────────────────────────────────────────────── */
 /*  Udara Segar — Warm Light Design System                      */
 /* ─────────────────────────────────────────────────────────── */
 :root {
@@ -31,21 +65,129 @@
   /* Lavender — milestones/achievements */
   --lavender:    #8B7FD4;
   --lavender-pale: #F0EEFF;
+  --lavender-tint: #D8D2FF;
 
-  /* Text — warm, not cold */
+  /* Text — warm, not cold.
+     text     primary body / headings       — ~14:1 on cream (AA body)
+     text-2   supporting paragraph text      — ~5.5:1 on cream (AA body)
+     text-3   small labels / metadata        — ~4.6:1 on cream (AA body)
+     Keeping the warm tone but bumped from #B5A49A so 10-12px labels
+     stay readable. */
   --text:        #2C1F14;
-  --text-2:      #7A6B5D;
-  --text-3:      #B5A49A;
+  --text-2:      #6B5C4F;
+  --text-3:      #8A7B6A;
 
-  /* Border */
-  --border:      #EDE6DC;
-  --border-mid:  #D9CFBE;
+  /* Borders — definition without visual noise. --border renders at ~1.3:1
+     (decorative divider). --border-mid at ~2.1:1 (dashed/attention). */
+  --border:      #E6DECF;
+  --border-mid:  #C4B7A1;
+
+  /* Strong variants for accent-as-text situations on light backgrounds.
+     Keeps the base accent tokens bright for icons/fills while still
+     providing readable text color at small sizes. */
+  --amber-strong:  #B45309;  /* ~5.2:1 on cream, AA body */
+  --green-strong:  #15794E;  /* ~6.6:1 on cream, AA body */
+  --coral-strong:  #B94426;  /* ~5.5:1 on cream, AA body */
 
   /* Shadows — warm tinted */
   --shadow-sm:   0 1px 4px rgba(44,31,20,0.07);
   --shadow-md:   0 4px 16px rgba(44,31,20,0.09), 0 1px 4px rgba(44,31,20,0.05);
   --shadow-lg:   0 8px 32px rgba(44,31,20,0.11), 0 2px 8px rgba(44,31,20,0.06);
   --shadow-card: 0 2px 12px rgba(44,31,20,0.07), 0 0 0 1px rgba(44,31,20,0.04);
+
+  /* Focus ring — 3px coral ring for keyboard accessibility. Visible on any
+     background, consistent across modes. */
+  --focus-ring:  0 0 0 3px color-mix(in srgb, var(--coral) 45%, transparent);
+
+  /* Modal backdrop — warm dim for light, deeper for dark so the layer
+     separation stays visible when the page itself is already near-black. */
+  --overlay:     rgba(44, 31, 20, 0.48);
+
+  /* Animate themed color tokens when the active habit or color mode
+     changes. Surface + text tokens are included so dark-mode toggles
+     fade smoothly alongside the habit accent tokens. */
+  transition-property:
+    --cream, --card, --card-tinted,
+    --green, --green-mid, --green-dark, --green-pale, --green-tint,
+    --coral, --coral-mid, --coral-pale, --coral-tint,
+    --amber, --amber-pale, --amber-tint,
+    --lavender, --lavender-pale, --lavender-tint,
+    --text, --text-2, --text-3,
+    --border, --border-mid;
+  transition-duration: 320ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─────────────────────────────────────────────────────────── */
+/*  Dark mode overrides                                         */
+/*  Applied when <html class="dark"> — set by the pre-hydration */
+/*  script and toggled by ThemeProvider. Habit accent tokens    */
+/*  (green/coral/amber/lavender) are written inline by          */
+/*  HabitProvider, which picks the habit's dark palette. These  */
+/*  rules cover the surface/text/shadow tokens that live in     */
+/*  globals so they don't rely on the habit module.             */
+/* ─────────────────────────────────────────────────────────── */
+.dark {
+  /* Surfaces + text + border — never overridden by HabitProvider.
+     text-3 bumped from #7A6D5E → #A99888 so 10-12px labels still
+     meet AA 4.5:1 on dark cream. */
+  --cream:       #14110C;
+  --card:        #20190F;
+  --card-tinted: #2A2116;
+
+  --text:        #F3ECE3;
+  --text-2:      #C7BAAA;
+  --text-3:      #A99888;
+
+  /* Borders — visible definition on dark surfaces. --border renders at
+     ~2.5:1 (decorative divider), --border-mid at ~4:1 (attention). */
+  --border:      #3A2F26;
+  --border-mid:  #5A4A3C;
+
+  /* Strong variants on dark become the brighter default accent since the
+     base already carries enough contrast against a dark backdrop. */
+  --amber-strong:  #FFB84D;
+  --green-strong:  #6BE8B7;
+  --coral-strong:  #FFA184;
+
+  --shadow-sm:   0 1px 4px rgba(0,0,0,0.5);
+  --shadow-md:   0 4px 16px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.45);
+  --shadow-lg:   0 8px 32px rgba(0,0,0,0.65), 0 2px 8px rgba(0,0,0,0.45);
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.06);
+
+  --focus-ring:  0 0 0 3px color-mix(in srgb, var(--coral) 55%, transparent);
+
+  --overlay:     rgba(0, 0, 0, 0.72);
+
+  /* Accent defaults — these live here for screens without an active habit
+     (landing, onboarding picker). When a habit is active, HabitProvider
+     writes its own dark palette inline, which takes precedence. */
+  --green:        #4FDBA6;
+  --green-mid:    #6BE8B7;
+  --green-dark:   #8FEFC7;
+  --green-pale:   #1F2D25;
+  --green-tint:   #2E4A3B;
+
+  --coral:        #FF8F6E;
+  --coral-mid:    #FFA184;
+  --coral-pale:   #2E1F17;
+  --coral-tint:   #4A2E23;
+
+  --amber:        #FFB84D;
+  --amber-pale:   #2E2415;
+  --amber-tint:   #4A3A20;
+
+  --lavender:     #A89CEC;
+  --lavender-pale: #1F1D2E;
+  --lavender-tint: #352F4E;
+
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    transition-duration: 0ms;
+  }
 }
 
 /* ── Base ─────────────────────────────────────────────────── */
@@ -54,10 +196,32 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* ── Keyboard focus ───────────────────────────────────────── */
+/*  Only show the ring for keyboard navigation, not mouse/touch.
+    :focus-visible delegates that decision to the browser.      */
+:focus { outline: none; }
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: 6px;
+}
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 html {
   background: var(--cream);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 320ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body {
@@ -66,19 +230,28 @@ body {
   min-height: 100dvh;
   font-family: var(--font-nunito), 'Nunito', sans-serif;
   font-feature-settings: 'kern';
+  transition: background-color 320ms cubic-bezier(0.4, 0, 0.2, 1),
+              color 320ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ── Safe areas ───────────────────────────────────────────── */
 .pb-safe { padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px); }
 .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
 
-/* ── Scrollbar ────────────────────────────────────────────── */
+/* ── Scrollbar — visible in both modes via --border-mid token ─ */
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Mode-aware hover backgrounds for list rows / menu items ── */
+.hover-row { transition: background-color 150ms ease; }
+.hover-row:hover {
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+}
 
 /* ── Font helpers ─────────────────────────────────────────── */
 .font-display { font-family: var(--font-nunito), 'Nunito', sans-serif; }

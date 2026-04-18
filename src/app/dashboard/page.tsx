@@ -8,88 +8,27 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useUserData } from '@/contexts/UserDataContext'
 import { Navigation } from '@/components/Navigation'
 import { StreakRing } from '@/components/StreakRing'
-import { getSmokeFreeStats, getHealthMilestones, formatRupiah, formatNumber, getSalam, motivasiQuotes } from '@/lib/utils'
-import { badges } from '@/lib/badges'
+import { formatRupiah, formatNumber, getSalam } from '@/lib/utils'
+import { useActiveHabit } from '@/habits/useActiveHabit'
+import type { Badge, HabitStats, TipItem } from '@/habits/types'
 import { InsightCard } from '@/components/InsightCard'
 import { VideoSection } from '@/components/VideoSection'
-
-type TipItem = { judul: string; desc: string; ikon: string }
-type TipCategory = { label: string; ikon: string; tips: TipItem[] }
-
-const tipCategories: TipCategory[] = [
-  {
-    label: 'Pernapasan', ikon: '🌬️',
-    tips: [
-      { judul: 'Napas Kotak',       desc: 'Hirup 4 detik · tahan 4 · hembuskan 4 · tahan 4. Ulangi 5x',  ikon: '⬜' },
-      { judul: 'Teknik 4-7-8',      desc: 'Hirup 4 detik, tahan 7, hembuskan perlahan 8 detik',           ikon: '🔢' },
-      { judul: 'Napas Diafragma',   desc: 'Kembangkan perut saat hirup, perlahan kempis saat hembuskan',  ikon: '🫁' },
-      { judul: 'Napas Dalam',       desc: '4 hitungan masuk · 4 tahan · 4 keluar',                        ikon: '🌬️' },
-      { judul: 'Visualisasi Ombak', desc: 'Bayangkan keinginan seperti ombak — datang lalu pergi',        ikon: '🌊' },
-      { judul: 'Napas Sadar',       desc: 'Tutup mata, fokus penuh pada setiap napas selama 2 menit',     ikon: '🧘' },
-    ],
-  },
-  {
-    label: 'Aktivitas', ikon: '🏃',
-    tips: [
-      { judul: 'Jalan Kaki',        desc: 'Bahkan 5 menit di luar mengubah suasana hati',                 ikon: '🚶' },
-      { judul: 'Naiki Tangga',      desc: 'Aerobik singkat yang langsung menurunkan keinginan',            ikon: '🪜' },
-      { judul: 'Peregangan',        desc: 'Regangkan tubuh 3 menit untuk melepaskan ketegangan',           ikon: '🤸' },
-      { judul: 'Jumping Jacks',     desc: '20 kali lompat untuk meningkatkan endorfin alami',              ikon: '⚡' },
-      { judul: 'Cuci Muka',         desc: 'Sensasi air dingin di wajah memutus siklus keinginan',          ikon: '💦' },
-      { judul: 'Yoga Singkat',      desc: 'Gerakan sederhana meningkatkan oksigen ke otak',                ikon: '🙆' },
-    ],
-  },
-  {
-    label: 'Distraksi', ikon: '🎯',
-    tips: [
-      { judul: 'Permen Karet',      desc: 'Buat mulutmu sibuk dengan pilihan sehat',                       ikon: '🍬' },
-      { judul: 'Aktivitas Tangan',  desc: 'Menulis, menggambar, atau bermain puzzle',                      ikon: '✏️' },
-      { judul: 'Benda di Tangan',   desc: 'Pegang pulpen, koin, atau benda kecil untuk tangan sibuk',      ikon: '🖊️' },
-      { judul: 'Pindah Tempat',     desc: 'Ganti suasana — pergi ke ruangan lain atau keluar sebentar',    ikon: '🚪' },
-      { judul: '5 Hal di Sekitar',  desc: 'Perhatikan 5 benda di sekitarmu — teknik grounding',            ikon: '👀' },
-      { judul: 'Musik Favorit',     desc: 'Putar lagu kesukaan dan fokus pada melodi',                     ikon: '🎵' },
-    ],
-  },
-  {
-    label: 'Minuman', ikon: '💧',
-    tips: [
-      { judul: 'Air Dingin',        desc: 'Segelas air es secara perlahan meredam keinginan',              ikon: '💧' },
-      { judul: 'Teh Herbal',        desc: 'Chamomile atau peppermint untuk ketenangan instan',             ikon: '🍵' },
-      { judul: 'Wortel/Seledri',    desc: 'Camilan renyah untuk menyibukkan mulut',                        ikon: '🥕' },
-      { judul: 'Susu Dingin',       desc: 'Penelitian: susu membuat rasa rokok tidak enak',                ikon: '🥛' },
-      { judul: 'Jus Lemon',         desc: 'Rasa asam kuat memutus fokus pada keinginan',                   ikon: '🍋' },
-      { judul: 'Camilan Sehat',     desc: 'Stabilkan gula darah dengan camilan bergizi kecil',             ikon: '🍎' },
-    ],
-  },
-  {
-    label: 'Mindfulness', ikon: '🧘',
-    tips: [
-      { judul: 'Meditasi 2 Menit',  desc: 'Duduk tenang dan fokus penuh pada napas',                       ikon: '🧘' },
-      { judul: 'Urge Surfing',      desc: 'Amati keinginan tanpa menghakimi — biarkan berlalu sendiri',    ikon: '🏄' },
-      { judul: 'Scan Tubuh',        desc: 'Sadari sensasi fisik dari kepala ke kaki tanpa reaksi',         ikon: '🔍' },
-      { judul: 'Afirmasi',          desc: '"Keinginan ini akan berlalu. Aku lebih kuat dari ini."',        ikon: '💬' },
-      { judul: 'Hadir Penuh',       desc: 'Perhatikan 5 hal dilihat, 4 disentuh, 3 didengar',              ikon: '🌟' },
-      { judul: 'Terima Keinginan',  desc: 'Akui keinginan itu ada — tidak melawan justru mempercepatnya', ikon: '🤝' },
-    ],
-  },
-  {
-    label: 'Sosial', ikon: '🤝',
-    tips: [
-      { judul: 'Hubungi Seseorang', desc: 'Alihkan pikiran dengan percakapan',                             ikon: '📞' },
-      { judul: 'Kirim Pesan',       desc: 'Beritahu temanmu bahwa kamu sedang berjuang',                   ikon: '💬' },
-      { judul: 'Baca Motivasi',     desc: 'Buka catatan alasanmu berhenti merokok',                        ikon: '📖' },
-      { judul: 'Tonton Video Lucu', desc: 'Tawa adalah pengalih keinginan yang efektif',                   ikon: '😂' },
-      { judul: 'Ingat Alasanmu',    desc: 'Bayangkan dirimu sehat dan bebas rokok di masa depan',          ikon: '🎯' },
-      { judul: 'Bantu Orang Lain',  desc: 'Mengalihkan diri ke aktivitas sosial memutus siklus craving',   ikon: '🫂' },
-    ],
-  },
-]
+import { HabitSelector } from '@/components/HabitSelector'
+import { PinUnlockSheet } from '@/components/PinUnlockSheet'
+import { MindfulPausePanel } from '@/components/MindfulPausePanel'
+import { DailyPracticeCard } from '@/components/DailyPracticeCard'
+import { useUnlock } from '@/habits/UnlockContext'
+import { useI18n } from '@/i18n/I18nProvider'
 
 export default function DashboardPage() {
   const router = useRouter()
   const { user } = useAuth()
-  const { profile, loading, updateProfile } = useUserData()
-  const [now, setNow] = useState(new Date())
+  const { loading, updateActiveHabitData } = useUserData()
+  const { config, stats, milestones, habitData, habitId } = useActiveHabit()
+  const { isUnlocked } = useUnlock()
+  const { t, locale } = useI18n()
+
+  const [, setNow] = useState(new Date())
   const [quoteIndex, setQuoteIndex] = useState(0)
   const [showCraving, setShowCraving] = useState(false)
   const [berhasil, setBerhasil] = useState(false)
@@ -97,6 +36,12 @@ export default function DashboardPage() {
   const [showReset, setShowReset] = useState(false)
   const [resetDate, setResetDate] = useState(new Date().toISOString().split('T')[0])
   const [resetting, setResetting] = useState(false)
+  const [unlockOpen, setUnlockOpen] = useState(false)
+
+  const isHiddenLocked =
+    !!habitData && habitId !== null &&
+    'privacy' in habitData && (habitData as { privacy?: string }).privacy === 'hidden' &&
+    !isUnlocked(habitId)
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000)
@@ -104,15 +49,16 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
-    const t = setInterval(() => setQuoteIndex(i => (i + 1) % motivasiQuotes.length), 8000)
+    if (!config) return
+    const t = setInterval(() => setQuoteIndex(i => (i + 1) % config.quotes.length), 8000)
     return () => clearInterval(t)
-  }, [])
+  }, [config])
 
   useEffect(() => {
-    if (!loading && !profile) router.push('/onboarding')
-  }, [loading, profile, router])
+    if (!loading && !habitData) router.push('/onboarding')
+  }, [loading, habitData, router])
 
-  if (loading || !profile) {
+  if (loading || !config || !stats || !habitData || !habitId) {
     return (
       <div className="flex items-center justify-center min-h-dvh" style={{ background: 'var(--cream)' }}>
         <div className="w-8 h-8 rounded-full border-[3px] border-t-transparent animate-spin"
@@ -121,14 +67,51 @@ export default function DashboardPage() {
     )
   }
 
-  const quitDate  = profile.quitDate.toDate()
-  const stats     = getSmokeFreeStats(quitDate, profile.cigarettesPerDay, profile.pricePerPack, profile.cigarettesPerPack)
-  const milestones = getHealthMilestones(quitDate)
-  const next      = milestones.find(m => !m.achieved)
-  const hours     = stats.diffHours % 24
-  const minutes   = stats.diffMinutes % 60
-  const seconds   = stats.diffSeconds % 60
-  const firstName = user?.displayName?.split(' ')[0] || 'Pejuang'
+  // Privacy guard: if the active habit is hidden and not unlocked this
+  // session, block the dashboard content and offer an unlock prompt.
+  // Prevents a hidden habit's data from flashing on page load.
+  if (isHiddenLocked) {
+    return (
+      <div className="min-h-dvh flex flex-col items-center justify-center px-6" style={{ background: 'var(--cream)' }}>
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 text-3xl"
+          style={{ background: 'var(--green-pale)', border: '1.5px solid var(--green-tint)' }}>
+          🔒
+        </div>
+        <h2 className="tracking-tight text-center mb-1"
+          style={{ fontFamily: 'var(--font-fraunces)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.02em' }}>
+          {config.label}
+        </h2>
+        <p className="text-sm font-500 text-center mb-6 max-w-[280px]" style={{ color: 'var(--text-2)' }}>
+          {locale === 'en' ? 'This habit is hidden. Unlock to see your progress.' : 'Kebiasaan ini disembunyikan. Buka untuk melihat progresnya.'}
+        </p>
+        <div className="flex gap-2 w-full max-w-[280px]">
+          <button onClick={() => router.push('/profil')}
+            className="flex-1 py-4 rounded-2xl text-sm font-700 transition-all active:scale-[0.97]"
+            style={{ fontFamily: 'var(--font-nunito)', background: 'var(--card)', border: '1.5px solid var(--border)', color: 'var(--text-2)' }}>
+            {t('profile.title')}
+          </button>
+          <button onClick={() => setUnlockOpen(true)}
+            className="flex-1 py-4 rounded-2xl text-sm font-800 transition-all active:scale-[0.97]"
+            style={{ fontFamily: 'var(--font-nunito)', background: 'var(--green)', color: 'white', boxShadow: '0 4px 20px rgba(61,190,143,0.35)' }}>
+            🔓 {t('selector.unlock')}
+          </button>
+        </div>
+        <PinUnlockSheet
+          open={unlockOpen}
+          habitId={habitId}
+          config={config}
+          data={habitData}
+          onClose={() => setUnlockOpen(false)}
+        />
+      </div>
+    )
+  }
+
+  const next    = milestones.find(m => !m.achieved)
+  const hours   = stats.diffHours % 24
+  const minutes = stats.diffMinutes % 60
+  const seconds = stats.diffSeconds % 60
+  const firstName = user?.displayName?.split(' ')[0] || (locale === 'en' ? 'Friend' : 'Pejuang')
 
   const handleBerhasil = () => {
     setBerhasil(true)
@@ -137,7 +120,7 @@ export default function DashboardPage() {
 
   const handleReset = async () => {
     setResetting(true)
-    await updateProfile({ quitDate: Timestamp.fromDate(new Date(resetDate + 'T00:00:00')) })
+    await updateActiveHabitData({ quitDate: Timestamp.fromDate(new Date(resetDate + 'T00:00:00')) })
     setResetting(false)
     setShowReset(false)
   }
@@ -152,30 +135,43 @@ export default function DashboardPage() {
       </div>
 
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-12 pb-2 relative z-10">
-        <div>
-          <p className="text-sm font-600" style={{ color: 'var(--text-3)' }}>{getSalam()},</p>
-          <h1 className="text-2xl font-800" style={{ fontFamily: 'var(--font-nunito)', color: 'var(--text)' }}>
-            {firstName} 👋
+      <div className="flex items-center justify-between gap-3 px-5 pt-12 pb-2 relative z-10">
+        <div className="min-w-0">
+          <p className="text-sm font-600" style={{ color: 'var(--text-3)' }}>{getSalam(locale)},</p>
+          <h1 className="text-2xl font-800 truncate" style={{ fontFamily: 'var(--font-nunito)', color: 'var(--text)' }}>
+            {firstName} {config.iconPack.greeting}
           </h1>
         </div>
-        <button onClick={() => router.push('/profil')}
-          className="flex items-center gap-2 transition-all active:scale-95">
-          {user?.photoURL ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={user.photoURL} alt="" referrerPolicy="no-referrer"
-              className="w-10 h-10 rounded-full object-cover"
-              style={{ border: '2.5px solid var(--green-tint)', boxShadow: 'var(--shadow-sm)' }} />
-          ) : (
-            <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-800"
-              style={{ background: 'var(--green-pale)', border: '2.5px solid var(--green-tint)', color: 'var(--green-mid)', fontFamily: 'var(--font-nunito)' }}>
-              {firstName[0]?.toUpperCase() || 'P'}
-            </div>
-          )}
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <HabitSelector />
+          <button onClick={() => router.push('/profil')}
+            className="flex items-center gap-2 transition-all active:scale-95">
+            {user?.photoURL ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={user.photoURL} alt="" referrerPolicy="no-referrer"
+                className="w-10 h-10 rounded-full object-cover"
+                style={{ border: '2.5px solid var(--green-tint)', boxShadow: 'var(--shadow-sm)' }} />
+            ) : (
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-800"
+                style={{ background: 'var(--green-pale)', border: '2.5px solid var(--green-tint)', color: 'var(--green-mid)', fontFamily: 'var(--font-nunito)' }}>
+                {firstName[0]?.toUpperCase() || 'P'}
+              </div>
+            )}
+          </button>
+        </div>
       </div>
 
-      <div className="px-5 space-y-4 relative z-10 mt-2">
+      {/* Key on habitId so switching habit cross-fades content; inner motion
+          elements replay their own entrance animations for a "new habit"
+          greeting effect alongside the theme transition. */}
+      <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={habitId}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+        className="px-5 space-y-4 relative z-10 mt-2">
 
         {/* Streak ring card */}
         <motion.div initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -194,7 +190,7 @@ export default function DashboardPage() {
                 transition={{ duration: 0.5, ease: 'easeInOut' }}
                 className="text-sm font-600 text-center leading-relaxed italic"
                 style={{ color: 'var(--text-2)', fontFamily: 'var(--font-fraunces)' }}>
-                "{motivasiQuotes[quoteIndex]}"
+                "{config.quotes[quoteIndex]}"
               </motion.p>
             </AnimatePresence>
           </div>
@@ -203,83 +199,107 @@ export default function DashboardPage() {
             onClick={() => { setResetDate(new Date().toISOString().split('T')[0]); setShowReset(true) }}
             className="mt-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-700 transition-all active:scale-95"
             style={{ color: 'var(--text-3)', fontFamily: 'var(--font-nunito)', background: 'var(--border)' }}>
-            <span>↺</span>
-            Mulai ulang
+            <span className="text-sm leading-none">↺</span>
+            {t('progress.reset')}
           </motion.button>
         </motion.div>
 
-        {/* Stats - slightly asymmetric layout */}
-        <div className="grid grid-cols-2 gap-3">
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-            <div className="rounded-[24px] p-5 h-full" style={{ background: 'var(--amber-pale)', border: '1.5px solid var(--amber-tint)' }}>
-              <div className="text-2xl mb-1">💰</div>
-              <div className="font-900 text-2xl leading-none"
-                style={{ fontFamily: 'var(--font-fraunces)', color: 'var(--amber)', letterSpacing: '-0.02em' }}>
-                {formatRupiah(stats.moneySaved)}
+        {/* Stats - money card is skipped for habits without money tracking */}
+        <div className={`grid gap-3 ${config.hasMoneyTracking ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          {config.hasMoneyTracking && (
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+              <div className="rounded-[24px] p-5 h-full" style={{ background: 'var(--amber-pale)', border: '1.5px solid var(--amber-tint)' }}>
+                <div className="text-2xl mb-1 leading-none">💰</div>
+                <div className="font-900 text-2xl leading-none"
+                  style={{ fontFamily: 'var(--font-fraunces)', color: 'var(--amber-strong)', letterSpacing: '-0.02em' }}>
+                  {formatRupiah(stats.moneySaved)}
+                </div>
+                <div className="text-xs font-700 mt-1.5" style={{ color: 'var(--text-2)' }}>{t('progress.totalSavings')}</div>
+                <div className="text-xs font-600 mt-0.5" style={{ color: 'var(--text-3)' }}>
+                  {formatRupiah(stats.moneySaved / Math.max(1, stats.diffDays) * 30)} {locale === 'en' ? '/ month' : '/ bulan'}
+                </div>
               </div>
-              <div className="text-xs font-700 mt-1.5" style={{ color: 'var(--text-2)' }}>Uang Tersimpan</div>
-              <div className="text-xs font-600 mt-0.5" style={{ color: 'var(--text-3)' }}>
-                {formatRupiah(stats.moneySaved / Math.max(1, stats.diffDays) * 30)} / bulan
-              </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          )}
 
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <div className="rounded-[24px] p-5 h-full" style={{ background: 'var(--green-pale)', border: '1.5px solid var(--green-tint)' }}>
-              <div className="text-2xl mb-1">🚭</div>
+              <div className="text-2xl mb-1 leading-none">{config.emoji}</div>
               <div className="font-900 text-2xl leading-none"
                 style={{ fontFamily: 'var(--font-fraunces)', color: 'var(--green-mid)', letterSpacing: '-0.02em' }}>
-                {formatNumber(stats.cigarettesAvoided)}
+                {formatNumber(stats.unitsAvoided)}
               </div>
-              <div className="text-xs font-700 mt-1.5" style={{ color: 'var(--text-2)' }}>Rokok Dihindari</div>
+              <div className="text-xs font-700 mt-1.5" style={{ color: 'var(--text-2)' }}>{config.copy.unitsAvoidedLabel}</div>
               <div className="text-xs font-600 mt-0.5" style={{ color: 'var(--text-3)' }}>
-                {stats.hoursLife} jam umur kembali
+                {stats.timeReclaimedHours} {config.copy.timeReclaimedLabel}
               </div>
             </div>
           </motion.div>
         </div>
 
-        {/* Video motivasi */}
+        {/* PMO-specific: daily mindfulness cue above the information sections */}
+        {habitId === 'porn' && (
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <DailyPracticeCard />
+          </motion.div>
+        )}
+
+        {/* Video motivasi — auto-hides for PMO (no videos configured) */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}>
           <VideoSection />
         </motion.div>
 
-        {/* Insight card - rotating smoking facts */}
+        {/* Insight card */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}>
           <InsightCard />
         </motion.div>
 
-        {/* Craving SOS button */}
+        {/* Craving affordance — SOS for smoking/alcohol, Napas Sadar for PMO.
+            PMO recovery is better served by a calm, invitational tone; the
+            red-alarm SOS reinforces panic and can retrigger the cycle. */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}>
-          <button onClick={() => {
-              const allTips = tipCategories.flatMap(c => c.tips)
-              const shuffled = allTips.sort(() => Math.random() - 0.5).slice(0, 6)
-              setRandomTips(shuffled)
-              setBerhasil(false)
-              setShowCraving(true)
-            }}
-            className="w-full flex items-center gap-4 p-5 rounded-[24px] transition-all active:scale-[0.97] text-left group"
-            style={{
-              background: 'var(--coral-pale)',
-              border: '1.5px solid var(--coral-tint)',
-              boxShadow: '0 4px 16px rgba(240,107,77,0.12)',
-            }}>
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
-              style={{ background: 'white', boxShadow: '0 2px 8px rgba(240,107,77,0.2)' }}>
-              <span className="text-2xl">🆘</span>
-            </div>
-            <div className="flex-1">
-              <div className="text-sm font-800" style={{ fontFamily: 'var(--font-nunito)', color: 'var(--coral-mid)' }}>
-                Lagi ngidam rokok?
+          {habitId === 'porn' ? (
+            <MindfulPausePanel
+              onOpen={() => {
+                const allTips = config.tipCategories.flatMap(c => c.tips)
+                const shuffled = allTips.sort(() => Math.random() - 0.5).slice(0, 6)
+                setRandomTips(shuffled)
+                setBerhasil(false)
+                setShowCraving(true)
+              }}
+            />
+          ) : (
+            <button onClick={() => {
+                const allTips = config.tipCategories.flatMap(c => c.tips)
+                const shuffled = allTips.sort(() => Math.random() - 0.5).slice(0, 6)
+                setRandomTips(shuffled)
+                setBerhasil(false)
+                setShowCraving(true)
+              }}
+              className="w-full flex items-center gap-4 p-5 rounded-[24px] transition-all active:scale-[0.97] text-left group"
+              style={{
+                background: config.copy.sosBg,
+                border: `1.5px solid ${config.copy.sosBorder}`,
+                boxShadow: `0 4px 16px color-mix(in srgb, ${config.copy.sosColor} 18%, transparent)`,
+              }}>
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 text-2xl"
+                style={{ background: 'var(--card)', boxShadow: `0 2px 8px color-mix(in srgb, ${config.copy.sosColor} 25%, transparent)` }}>
+                {config.copy.sosEmoji}
               </div>
-              <div className="text-xs font-600 mt-0.5" style={{ color: 'rgba(209,90,61,0.6)' }}>
-                Ketuk untuk cara mengatasi keinginan
+              <div className="flex-1">
+                <div className="text-sm font-800" style={{ fontFamily: 'var(--font-nunito)', color: config.copy.sosColor }}>
+                  {config.copy.sosPrompt}
+                </div>
+                <div className="text-xs font-600 mt-0.5"
+                  style={{ color: `color-mix(in srgb, ${config.copy.sosColor} 65%, transparent)` }}>
+                  {config.copy.sosSubtext}
+                </div>
               </div>
-            </div>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--coral-tint)" strokeWidth="2.5">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </button>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={config.copy.sosBorder} strokeWidth="2.5">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+            </button>
+          )}
         </motion.div>
 
         {/* Next milestone */}
@@ -289,7 +309,7 @@ export default function DashboardPage() {
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-xs font-800 tracking-widest uppercase"
                   style={{ fontFamily: 'var(--font-nunito)', color: 'var(--green-mid)' }}>
-                  Milestone Berikutnya
+                  {t('progress.nextMilestone')}
                 </span>
               </div>
               <div className="flex items-center gap-3">
@@ -310,7 +330,7 @@ export default function DashboardPage() {
                     />
                   </div>
                   <div className="text-[10px] font-700 mt-1" style={{ color: 'var(--text-3)' }}>
-                    {next.progress.toFixed(0)}% tercapai
+                    {next.progress.toFixed(0)}% {locale === 'en' ? 'complete' : 'tercapai'}
                   </div>
                 </div>
               </div>
@@ -319,16 +339,17 @@ export default function DashboardPage() {
         )}
 
         {/* Achievement gamification section */}
-        <AchievementSection stats={stats} />
+        <AchievementSection stats={stats} badges={config.badges} iconPack={config.iconPack} />
 
-      </div>
+      </motion.div>
+      </AnimatePresence>
 
       {/* Craving modal */}
       <AnimatePresence>
         {showCraving && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[60] flex items-end"
-            style={{ background: 'rgba(44,31,20,0.5)', backdropFilter: 'blur(6px)' }}
+            style={{ background: 'var(--overlay)', backdropFilter: 'blur(6px)' }}
             onClick={e => e.target === e.currentTarget && setShowCraving(false)}
           >
             <motion.div
@@ -350,13 +371,13 @@ export default function DashboardPage() {
                     <motion.div
                       initial={{ scale: 0 }} animate={{ scale: 1 }}
                       transition={{ type: 'spring', stiffness: 400, delay: 0.1 }}
-                      className="text-6xl mb-5">🏆</motion.div>
+                      className="text-6xl mb-5">{config.iconPack.success}</motion.div>
                     <h3 className="text-2xl font-900 mb-2"
                       style={{ fontFamily: 'var(--font-fraunces)', color: 'var(--green-mid)', letterSpacing: '-0.02em' }}>
-                      Kamu berhasil!
+                      {t('cravings.success')}
                     </h3>
                     <p className="font-600" style={{ color: 'var(--text-2)' }}>
-                      Keinginan itu sudah berlalu. Kamu jauh lebih kuat dari yang kamu kira.
+                      {t('cravings.successSub')}
                     </p>
                   </motion.div>
                 ) : (
@@ -364,10 +385,10 @@ export default function DashboardPage() {
                     <div className="flex items-start justify-between mb-1">
                       <div>
                         <h3 className="text-xl font-900" style={{ fontFamily: 'var(--font-fraunces)', color: 'var(--text)', letterSpacing: '-0.02em' }}>
-                          Kamu pasti bisa! 💪
+                          {t('sos.holdOn')} {config.iconPack.encouragement}
                         </h3>
                         <p className="text-sm font-500 mt-1" style={{ color: 'var(--text-2)' }}>
-                          Keinginan berlangsung 3–5 menit saja. Coba ini:
+                          {t('sos.sub')}
                         </p>
                       </div>
                       <button onClick={() => setShowCraving(false)}
@@ -403,7 +424,7 @@ export default function DashboardPage() {
                         color: 'white',
                         boxShadow: '0 4px 20px rgba(61,190,143,0.35)',
                       }}>
-                      ✅ Saya berhasil menahan keinginan!
+                      ✅ {t('sos.iDidIt')}
                     </button>
                   </motion.div>
                 )}
@@ -418,7 +439,7 @@ export default function DashboardPage() {
         {showReset && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[60] flex items-end"
-            style={{ background: 'rgba(44,31,20,0.5)', backdropFilter: 'blur(6px)' }}
+            style={{ background: 'var(--overlay)', backdropFilter: 'blur(6px)' }}
             onClick={e => e.target === e.currentTarget && setShowReset(false)}
           >
             <motion.div
@@ -429,13 +450,13 @@ export default function DashboardPage() {
             >
               <div className="w-10 h-1 rounded-full mx-auto mb-6" style={{ background: 'var(--border-mid)' }} />
 
-              <div className="text-4xl text-center mb-4">🌱</div>
+              <div className="text-4xl text-center mb-4">{config.iconPack.resetHero}</div>
               <h3 className="text-xl font-900 text-center mb-1"
                 style={{ fontFamily: 'var(--font-fraunces)', color: 'var(--text)', letterSpacing: '-0.02em' }}>
-                Tidak apa-apa.
+                {t('sos.slip.title')}
               </h3>
               <p className="text-sm font-500 text-center mb-6 leading-relaxed" style={{ color: 'var(--text-2)' }}>
-                Setiap hari baru adalah kesempatan baru. Pilih tanggal mulaimu yang baru.
+                {t('reset.sub')}
               </p>
 
               <div className="rounded-2xl overflow-hidden mb-4"
@@ -443,24 +464,25 @@ export default function DashboardPage() {
                 <input type="date" value={resetDate} onChange={e => setResetDate(e.target.value)}
                   max={new Date().toISOString().split('T')[0]}
                   className="w-full bg-transparent px-4 py-4 text-base font-700 focus:outline-none"
-                  style={{ color: 'var(--text)', fontFamily: 'var(--font-nunito)', colorScheme: 'light' }} />
+                  style={{ color: 'var(--text)', fontFamily: 'var(--font-nunito)' }} />
               </div>
 
               <div className="grid grid-cols-2 gap-2 mb-4">
                 {[
-                  { label: '✨ Hari ini', offset: 0 },
-                  { label: '📅 Kemarin', offset: 1 },
+                  { label: locale === 'en' ? '✨ Today' : '✨ Hari ini', offset: 0 },
+                  { label: locale === 'en' ? '📅 Yesterday' : '📅 Kemarin', offset: 1 },
                 ].map(({ label, offset }) => {
                   const d = new Date(); d.setDate(d.getDate() - offset)
                   const val = d.toISOString().split('T')[0]
+                  const active = resetDate === val
                   return (
                     <button key={label} onClick={() => setResetDate(val)}
                       className="py-2.5 px-3 rounded-xl text-xs font-700 text-center transition-all active:scale-95"
                       style={{
                         fontFamily: 'var(--font-nunito)',
-                        background: resetDate === val ? 'var(--green-pale)' : 'var(--card)',
-                        border: `1.5px solid ${resetDate === val ? 'var(--green-tint)' : 'var(--border)'}`,
-                        color: resetDate === val ? 'var(--green-mid)' : 'var(--text-2)',
+                        background: active ? 'var(--green-pale)' : 'var(--card)',
+                        border: `1.5px solid ${active ? 'var(--green-tint)' : 'var(--border)'}`,
+                        color: active ? 'var(--green-mid)' : 'var(--text-2)',
                       }}>
                       {label}
                     </button>
@@ -478,7 +500,7 @@ export default function DashboardPage() {
                 }}>
                 {resetting
                   ? <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                  : '🚀 Mulai Lagi Sekarang!'}
+                  : `${config.iconPack.restart} ${locale === 'en' ? 'Start Over Now!' : 'Mulai Lagi Sekarang!'}`}
               </button>
             </motion.div>
           </motion.div>
@@ -490,8 +512,9 @@ export default function DashboardPage() {
   )
 }
 
-function AchievementSection({ stats }: { stats: ReturnType<typeof getSmokeFreeStats> }) {
+function AchievementSection({ stats, badges, iconPack }: { stats: HabitStats; badges: Badge[]; iconPack: { achievements: string } }) {
   const router = useRouter()
+  const { t, locale } = useI18n()
   const unlocked = badges.filter(b => b.syarat(stats))
   const locked   = badges.filter(b => !b.syarat(stats))
   const latest   = unlocked[unlocked.length - 1]
@@ -505,9 +528,9 @@ function AchievementSection({ stats }: { stats: ReturnType<typeof getSmokeFreeSt
         <button onClick={() => router.push('/achievements')}
           className="w-full flex items-center justify-between px-5 pt-5 pb-3 active:opacity-70 transition-opacity">
           <div className="flex items-center gap-2">
-            <span className="text-base">🏅</span>
+            <span className="text-base">{iconPack.achievements}</span>
             <span className="text-sm font-800" style={{ fontFamily: 'var(--font-nunito)', color: 'var(--text)' }}>
-              Pencapaian
+              {t('achievements.title')}
             </span>
             <span className="text-xs font-700 px-2 py-0.5 rounded-full"
               style={{ background: 'var(--green-pale)', color: 'var(--green-mid)', fontFamily: 'var(--font-nunito)' }}>
@@ -515,7 +538,7 @@ function AchievementSection({ stats }: { stats: ReturnType<typeof getSmokeFreeSt
             </span>
           </div>
           <div className="flex items-center gap-1 text-xs font-700" style={{ color: 'var(--green-mid)' }}>
-            Lihat semua <span>→</span>
+            {locale === 'en' ? 'See all' : 'Lihat semua'} <span>→</span>
           </div>
         </button>
 
@@ -545,7 +568,7 @@ function AchievementSection({ stats }: { stats: ReturnType<typeof getSmokeFreeSt
               <div className="flex items-center gap-2">
                 <span className="text-xs font-900 px-1.5 py-0.5 rounded-md"
                   style={{ background: latest.color, color: 'white', fontFamily: 'var(--font-nunito)', fontSize: '9px', letterSpacing: '0.05em' }}>
-                  TERBARU
+                  {locale === 'en' ? 'LATEST' : 'TERBARU'}
                 </span>
               </div>
               <div className="text-sm font-800 mt-0.5" style={{ fontFamily: 'var(--font-nunito)', color: latest.color }}>
@@ -613,7 +636,7 @@ function AchievementSection({ stats }: { stats: ReturnType<typeof getSmokeFreeSt
             <div className="flex-1 min-w-0">
               <div className="text-[10px] font-800 tracking-wider uppercase mb-0.5"
                 style={{ color: 'var(--text-3)', fontFamily: 'var(--font-nunito)' }}>
-                Berikutnya
+                {locale === 'en' ? 'Next' : 'Berikutnya'}
               </div>
               <div className="text-xs font-800" style={{ fontFamily: 'var(--font-nunito)', color: 'var(--text-2)' }}>
                 {nextBadge.judul}
@@ -627,4 +650,3 @@ function AchievementSection({ stats }: { stats: ReturnType<typeof getSmokeFreeSt
     </motion.div>
   )
 }
-

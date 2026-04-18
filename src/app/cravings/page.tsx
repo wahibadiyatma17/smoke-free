@@ -4,35 +4,42 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatDistanceToNow } from 'date-fns'
-import { id } from 'date-fns/locale'
+import { id as dfId, enUS as dfEn } from 'date-fns/locale'
 import { Timestamp } from 'firebase/firestore'
 import { useAuth } from '@/contexts/AuthContext'
 import { Navigation } from '@/components/Navigation'
 import { logCraving, getCravings, CravingLog } from '@/lib/firestore'
+import { useActiveHabit } from '@/habits/useActiveHabit'
+import { useI18n } from '@/i18n/I18nProvider'
+import type { HabitId } from '@/habits/types'
 
 const GUEST_CRAVINGS_KEY = 'smoke_free_guest_cravings'
 
-const pemicu = ['Stres', 'Setelah makan', 'Kopi', 'Sosial', 'Alkohol', 'Bosan', 'Kerja', 'Berkendara', 'Pagi hari', 'Lainnya']
-const caraAtasi = ['Tarik napas dalam', 'Minum air', 'Jalan kaki', 'Alihkan perhatian', 'Hubungi seseorang', 'Meditasi', 'Permen karet', 'Tunggu berlalu']
 const intensityEmoji = ['', '😌', '😐', '😐', '😕', '😟', '😰', '😰', '😱', '😱', '🔥']
 
-function loadGuestCravings(): CravingLog[] {
+function loadAllGuestCravings(): CravingLog[] {
   try {
     const raw = localStorage.getItem(GUEST_CRAVINGS_KEY)
     if (!raw) return []
     return (JSON.parse(raw) as any[]).map(c => ({
       ...c,
+      habitId: (c.habitId as HabitId) ?? 'smoking',
       timestamp: Timestamp.fromDate(new Date(c.timestamp)),
     }))
   } catch { return [] }
 }
 
-function saveGuestCraving(entry: Omit<CravingLog, 'uid' | 'timestamp' | 'id'>) {
-  const existing = loadGuestCravings()
+function loadGuestCravingsForHabit(habitId: HabitId): CravingLog[] {
+  return loadAllGuestCravings().filter(c => c.habitId === habitId)
+}
+
+function saveGuestCraving(habitId: HabitId, entry: Omit<CravingLog, 'uid' | 'timestamp' | 'id' | 'habitId'>) {
+  const existing = loadAllGuestCravings()
   const newEntry: CravingLog = {
     ...entry,
     id: Date.now().toString(),
     uid: 'guest',
+    habitId,
     timestamp: Timestamp.fromDate(new Date()),
   }
   const serialized = [newEntry, ...existing].map(c => ({
@@ -40,41 +47,70 @@ function saveGuestCraving(entry: Omit<CravingLog, 'uid' | 'timestamp' | 'id'>) {
     timestamp: c.timestamp.toDate().toISOString(),
   }))
   localStorage.setItem(GUEST_CRAVINGS_KEY, JSON.stringify(serialized))
-  return loadGuestCravings()
+  return loadGuestCravingsForHabit(habitId)
 }
 
 export default function CravingsPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  const { config, habitId } = useActiveHabit()
+  const { locale, t } = useI18n()
+  const dfLocale = locale === 'en' ? dfEn : dfId
+
   const [cravings, setCravings] = useState<CravingLog[]>([])
   const [showForm, setShowForm] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
   const [saving, setSaving] = useState(false)
 
   const [intensitas, setIntensitas] = useState(5)
-  const [pemicuDipilih, setPemicu] = useState('Stres')
-  const [caraDipilih, setCara] = useState('Tarik napas dalam')
+  const [pemicuDipilih, setPemicu] = useState('')
+  const [caraDipilih, setCara] = useState('')
   const [berhasil, setBerhasil] = useState(true)
   const [catatan, setCatatan] = useState('')
 
+  // Seed defaults on first load and re-seed when the active habit changes —
+  // only resetting selections that are no longer valid for the new habit's
+  // trigger/coping lists. Keeps in-progress selections when they still fit.
   useEffect(() => {
-    if (authLoading) return
+    if (!config) return
+    setPemicu(prev => (config.cravingTriggers.includes(prev) ? prev : config.cravingTriggers[0] ?? ''))
+    setCara(prev => (config.cravingCopings.includes(prev) ? prev : config.cravingCopings[0] ?? ''))
+  }, [config])
+
+  useEffect(() => {
+    if (authLoading || !habitId) return
+    setLoadingData(true)
     if (user) {
-      getCravings(user.uid).then(setCravings).finally(() => setLoadingData(false))
+      getCravings(user.uid, habitId).then(setCravings).finally(() => setLoadingData(false))
     } else {
-      setCravings(loadGuestCravings())
+      setCravings(loadGuestCravingsForHabit(habitId))
       setLoadingData(false)
     }
-  }, [user, authLoading])
+  }, [user, authLoading, habitId])
 
   const handleSimpan = async () => {
+    if (!habitId) return
     setSaving(true)
     try {
+      const entry = {
+        habitId,
+        intensity: intensitas,
+        trigger: pemicuDipilih,
+        copingUsed: caraDipilih,
+        resisted: berhasil,
+        note: catatan,
+      }
       if (user) {
-        await logCraving(user.uid, { intensity: intensitas, trigger: pemicuDipilih, copingUsed: caraDipilih, resisted: berhasil, note: catatan })
-        setCravings(await getCravings(user.uid))
+        await logCraving(user.uid, entry)
+        setCravings(await getCravings(user.uid, habitId))
       } else {
-        setCravings(saveGuestCraving({ intensity: intensitas, trigger: pemicuDipilih, copingUsed: caraDipilih, resisted: berhasil, note: catatan }))
+        setCravings(saveGuestCraving(habitId, {
+          intensity: intensitas,
+          trigger: pemicuDipilih,
+          copingUsed: caraDipilih,
+          resisted: berhasil,
+          note: catatan,
+        }))
       }
       setShowForm(false); setCatatan(''); setIntensitas(5)
     } finally { setSaving(false) }
@@ -83,6 +119,15 @@ export default function CravingsPage() {
   const totalBerhasil = cravings.filter(c => c.resisted).length
   const total = cravings.length
   const rate = total > 0 ? Math.round((totalBerhasil / total) * 100) : 100
+
+  if (!config) {
+    return (
+      <div className="flex items-center justify-center min-h-dvh" style={{ background: 'var(--cream)' }}>
+        <div className="w-8 h-8 rounded-full border-[3px] border-t-transparent animate-spin"
+          style={{ borderColor: 'var(--green)', borderTopColor: 'transparent' }} />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-dvh pb-36" style={{ background: 'var(--cream)' }}>
@@ -96,9 +141,11 @@ export default function CravingsPage() {
           <div>
             <h1 className="tracking-tight"
               style={{ fontFamily: 'var(--font-fraunces)', fontSize: '1.9rem', fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.02em' }}>
-              Keinginan 🌬️
+              {config.copy.cravingHeader}
             </h1>
-            <p className="text-sm font-600 mt-0.5" style={{ color: 'var(--text-2)' }}>Lacak & pahami polamu</p>
+            <p className="text-sm font-600 mt-0.5" style={{ color: 'var(--text-2)' }}>
+              {locale === 'en' ? 'Track & understand your pattern' : 'Lacak & pahami polamu'}
+            </p>
           </div>
           <button onClick={() => setShowForm(true)}
             className="w-11 h-11 rounded-2xl flex items-center justify-center transition-all active:scale-90 font-800 text-xl"
@@ -112,9 +159,9 @@ export default function CravingsPage() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2.5">
           {[
-            { label: 'Dicatat',        value: total,          color: 'var(--text)' },
-            { label: 'Berhasil',       value: totalBerhasil,  color: 'var(--green-mid)' },
-            { label: 'Tingkat sukses', value: `${rate}%`,     color: 'var(--green-mid)' },
+            { label: locale === 'en' ? 'Logged'      : 'Dicatat',        value: total,          color: 'var(--text)' },
+            { label: locale === 'en' ? 'Resisted'    : 'Berhasil',       value: totalBerhasil,  color: 'var(--green-mid)' },
+            { label: locale === 'en' ? 'Success rate': 'Tingkat sukses', value: `${rate}%`,     color: 'var(--green-mid)' },
           ].map(s => (
             <div key={s.label} className="rounded-2xl p-3.5 text-center"
               style={{ background: 'var(--card)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)' }}>
@@ -132,9 +179,11 @@ export default function CravingsPage() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             className="flex flex-col items-center py-16 text-center">
             <div className="text-5xl mb-4">🌬️</div>
-            <p className="font-800 text-base" style={{ color: 'var(--text-2)' }}>Belum ada keinginan dicatat</p>
+            <p className="font-800 text-base" style={{ color: 'var(--text-2)' }}>
+              {locale === 'en' ? 'No cravings logged yet' : 'Belum ada keinginan dicatat'}
+            </p>
             <p className="text-sm font-500 mt-1" style={{ color: 'var(--text-3)' }}>
-              Ketuk + saat keinginan muncul dan catat
+              {locale === 'en' ? 'Tap + when an urge shows up and log it' : 'Ketuk + saat keinginan muncul dan catat'}
             </p>
           </motion.div>
         )}
@@ -164,7 +213,7 @@ export default function CravingsPage() {
                       {c.trigger}
                     </span>
                     <span className="text-[10px] font-600 flex-shrink-0" style={{ color: 'var(--text-3)' }}>
-                      {formatDistanceToNow(c.timestamp.toDate(), { addSuffix: true, locale: id })}
+                      {formatDistanceToNow(c.timestamp.toDate(), { addSuffix: true, locale: dfLocale })}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 mt-1.5">
@@ -177,7 +226,9 @@ export default function CravingsPage() {
                     </div>
                     <span className="text-[10px] font-600" style={{ color: 'var(--text-3)' }}>{c.intensity}/10</span>
                   </div>
-                  <div className="text-[11px] font-600 mt-1" style={{ color: 'var(--text-3)' }}>💡 {c.copingUsed}</div>
+                  <div className="text-[11px] font-600 mt-1" style={{ color: 'var(--text-3)' }}>
+                    💡 {c.copingUsed}
+                  </div>
                 </div>
               </motion.div>
             ))}
@@ -190,7 +241,7 @@ export default function CravingsPage() {
         {showForm && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[60] flex items-end"
-            style={{ background: 'rgba(44,31,20,0.45)', backdropFilter: 'blur(6px)' }}
+            style={{ background: 'var(--overlay)', backdropFilter: 'blur(6px)' }}
             onClick={e => e.target === e.currentTarget && setShowForm(false)}
           >
             <motion.div
@@ -203,23 +254,23 @@ export default function CravingsPage() {
               <div className="flex items-center justify-between mb-5">
                 <h3 className="tracking-tight"
                   style={{ fontFamily: 'var(--font-fraunces)', fontSize: '1.4rem', fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.02em' }}>
-                  Catat Keinginan 📝
+                  {locale === 'en' ? 'Log Craving 📝' : 'Catat Keinginan 📝'}
                 </h3>
                 <button onClick={() => setShowForm(false)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-base font-700"
                   style={{ background: 'var(--border)', color: 'var(--text-2)' }}>
-                  <span className="text-base leading-none">✕</span>
+                  ✕
                 </button>
               </div>
 
               <div className="space-y-5">
                 {/* Berhasil? */}
                 <div>
-                  <FormLabel>Kamu berhasil menahan?</FormLabel>
+                  <FormLabel>{locale === 'en' ? 'Did you resist?' : 'Kamu berhasil menahan?'}</FormLabel>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { val: true,  label: '✅ Ya, berhasil!' },
-                      { val: false, label: '😔 Tidak kali ini' },
+                      { val: true,  label: locale === 'en' ? '✅ Yes, resisted!'   : '✅ Ya, berhasil!' },
+                      { val: false, label: locale === 'en' ? '😔 Not this time' : '😔 Tidak kali ini' },
                     ].map(({ val, label }) => (
                       <button key={String(val)} onClick={() => setBerhasil(val)}
                         className="py-3 px-4 rounded-xl text-sm font-700 transition-all active:scale-95"
@@ -239,7 +290,7 @@ export default function CravingsPage() {
                 {/* Intensitas */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <FormLabel>Intensitas keinginan</FormLabel>
+                    <FormLabel>{locale === 'en' ? 'Urge intensity' : 'Intensitas keinginan'}</FormLabel>
                     <span className="text-xl font-900"
                       style={{ fontFamily: 'var(--font-fraunces)', color: 'var(--coral)' }}>
                       {intensityEmoji[intensitas]} {intensitas}/10
@@ -249,15 +300,15 @@ export default function CravingsPage() {
                     onChange={e => setIntensitas(Number(e.target.value))}
                     className="w-full" style={{ accentColor: 'var(--coral)' }} />
                   <div className="flex justify-between text-[10px] font-700 mt-1" style={{ color: 'var(--text-3)' }}>
-                    <span>Ringan</span><span>Ekstrem</span>
+                    <span>{t('cravings.intensityLow')}</span><span>{locale === 'en' ? 'Extreme' : 'Ekstrem'}</span>
                   </div>
                 </div>
 
                 {/* Pemicu */}
                 <div>
-                  <FormLabel>Apa pemicunya?</FormLabel>
+                  <FormLabel>{t('cravings.whatTrigger')}</FormLabel>
                   <div className="flex flex-wrap gap-2">
-                    {pemicu.map(p => (
+                    {config.cravingTriggers.map(p => (
                       <TagBtn key={p} active={pemicuDipilih === p} onClick={() => setPemicu(p)} color="coral">{p}</TagBtn>
                     ))}
                   </div>
@@ -265,9 +316,9 @@ export default function CravingsPage() {
 
                 {/* Cara */}
                 <div>
-                  <FormLabel>Cara mengatasinya</FormLabel>
+                  <FormLabel>{t('cravings.whatToDo')}</FormLabel>
                   <div className="flex flex-wrap gap-2">
-                    {caraAtasi.map(c => (
+                    {config.cravingCopings.map(c => (
                       <TagBtn key={c} active={caraDipilih === c} onClick={() => setCara(c)} color="green">{c}</TagBtn>
                     ))}
                   </div>
@@ -275,9 +326,9 @@ export default function CravingsPage() {
 
                 {/* Catatan */}
                 <div>
-                  <FormLabel>Catatan (opsional)</FormLabel>
+                  <FormLabel>{t('cravings.notes')}</FormLabel>
                   <textarea value={catatan} onChange={e => setCatatan(e.target.value)}
-                    placeholder="Bagaimana perasaanmu saat itu?" rows={2}
+                    placeholder={t('cravings.notesPlaceholder')} rows={2}
                     className="input-warm px-4 py-3 text-sm resize-none"
                   />
                 </div>
@@ -287,7 +338,7 @@ export default function CravingsPage() {
                   style={{ fontFamily: 'var(--font-nunito)', background: 'var(--green)', color: 'white', boxShadow: '0 4px 20px rgba(61,190,143,0.3)' }}>
                   {saving
                     ? <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                    : '💾 Simpan Catatan'}
+                    : `💾 ${t('common.save')}`}
                 </button>
               </div>
             </motion.div>

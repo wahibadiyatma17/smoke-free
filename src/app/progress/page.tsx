@@ -6,18 +6,22 @@ import { motion } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUserData } from '@/contexts/UserDataContext'
 import { Navigation } from '@/components/Navigation'
-import { getSmokeFreeStats, getHealthMilestones, formatRupiah, formatNumber } from '@/lib/utils'
+import { formatRupiah, formatNumber } from '@/lib/utils'
+import { useActiveHabit } from '@/habits/useActiveHabit'
+import { useI18n } from '@/i18n/I18nProvider'
 
 export default function ProgressPage() {
   const router = useRouter()
   const { loading: authLoading } = useAuth()
-  const { profile, loading: profileLoading } = useUserData()
+  const { loading: profileLoading } = useUserData()
+  const { config, habitData, stats, milestones } = useActiveHabit()
+  const { t, locale } = useI18n()
 
   useEffect(() => {
-    if (!authLoading && !profileLoading && !profile) router.push('/onboarding')
-  }, [authLoading, profileLoading, profile, router])
+    if (!authLoading && !profileLoading && !habitData) router.push('/onboarding')
+  }, [authLoading, profileLoading, habitData, router])
 
-  if (authLoading || profileLoading || !profile) {
+  if (authLoading || profileLoading || !config || !habitData || !stats) {
     return (
       <div className="flex items-center justify-center min-h-dvh" style={{ background: 'var(--cream)' }}>
         <div className="w-8 h-8 rounded-full border-[3px] border-t-transparent animate-spin"
@@ -26,17 +30,21 @@ export default function ProgressPage() {
     )
   }
 
-  const quitDate = profile.quitDate.toDate()
-  const stats = getSmokeFreeStats(quitDate, profile.cigarettesPerDay, profile.pricePerPack, profile.cigarettesPerPack)
-  const milestones = getHealthMilestones(quitDate)
   const achieved = milestones.filter(m => m.achieved).length
 
-  const ringkasan = [
-    { emoji: '💰', nilai: formatRupiah(stats.moneySaved),           label: 'Uang Tersimpan',       sub: `${formatRupiah(stats.moneySaved / Math.max(1, stats.diffDays) * 30)} / bln`, bg: 'var(--amber-pale)',    border: 'var(--amber-tint)',   color: 'var(--amber)' },
-    { emoji: '🚭', nilai: formatNumber(stats.cigarettesAvoided),    label: 'Tidak Dihisap',        sub: `${(stats.cigarettesAvoided / (profile.cigarettesPerPack || 16)).toFixed(1)} bungkus`, bg: 'var(--green-pale)',    border: 'var(--green-tint)',   color: 'var(--green-mid)' },
-    { emoji: '⏱️', nilai: `${stats.hoursLife}j`,                    label: 'Waktu Kembali',        sub: `≈ ${stats.daysLife} hari umur`,          bg: 'var(--lavender-pale)', border: '#D8D2FF',             color: 'var(--lavender)' },
-    { emoji: '📅', nilai: String(stats.diffDays),                   label: 'Hari Bebas Rokok',     sub: `${stats.diffWeeks} mgg ${stats.diffDays % 7} hari`, bg: 'var(--coral-pale)',    border: 'var(--coral-tint)',   color: 'var(--coral)' },
-  ]
+  type Card = { icon: string; nilai: string; label: string; sub: string; bg: string; border: string; color: string }
+  const perMonth = locale === 'en' ? '/ mo' : '/ bln'
+  const hoursShort = locale === 'en' ? 'h' : 'j'
+  const daysApprox = locale === 'en' ? `≈ ${stats.timeReclaimedDays} days` : `≈ ${stats.timeReclaimedDays} hari`
+  const weeksDays = locale === 'en'
+    ? `${stats.diffWeeks} wk ${stats.diffDays % 7} days`
+    : `${stats.diffWeeks} mgg ${stats.diffDays % 7} hari`
+  const ringkasan: Card[] = [
+    config.hasMoneyTracking && { icon: '💰',           nilai: formatRupiah(stats.moneySaved),       label: t('progress.totalSavings'),              sub: `${formatRupiah(stats.moneySaved / Math.max(1, stats.diffDays) * 30)} ${perMonth}`, bg: 'var(--amber-pale)',    border: 'var(--amber-tint)',    color: 'var(--amber-strong)' },
+    { icon: config.emoji,    nilai: formatNumber(stats.unitsAvoided),     label: config.copy.unitsAvoidedLabel, sub: config.formatProgressUnitsSub(stats, habitData),                             bg: 'var(--green-pale)',    border: 'var(--green-tint)',    color: 'var(--green-mid)' },
+    { icon: '⏱️',            nilai: `${stats.timeReclaimedHours}${hoursShort}`,       label: t('dashboard.timeReclaimed'),               sub: daysApprox,                                         bg: 'var(--lavender-pale)', border: 'var(--lavender-tint)', color: 'var(--lavender)' },
+    { icon: '📅',            nilai: String(stats.diffDays),               label: config.copy.daysFreeLabel,     sub: weeksDays,                         bg: 'var(--coral-pale)',    border: 'var(--coral-tint)',    color: 'var(--coral)' },
+  ].filter((c): c is Card => !!c)
 
   return (
     <div className="min-h-dvh pb-36" style={{ background: 'var(--cream)' }}>
@@ -49,9 +57,11 @@ export default function ProgressPage() {
       <div className="px-5 pt-12 pb-2 relative z-10">
         <h1 className="tracking-tight mb-1"
           style={{ fontFamily: 'var(--font-fraunces)', fontSize: '1.9rem', fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.02em' }}>
-          Perkembanganmu 📈
+          {locale === 'en' ? 'Your Progress 📈' : 'Perkembanganmu 📈'}
         </h1>
-        <p className="text-sm font-600" style={{ color: 'var(--text-2)' }}>Setiap angka di sini adalah kemenanganmu</p>
+        <p className="text-sm font-600" style={{ color: 'var(--text-2)' }}>
+          {locale === 'en' ? 'Every number here is a win' : 'Setiap angka di sini adalah kemenanganmu'}
+        </p>
       </div>
 
       <div className="px-5 space-y-4 mt-4 relative z-10">
@@ -63,7 +73,7 @@ export default function ProgressPage() {
               initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
               className="rounded-[24px] p-5"
               style={{ background: s.bg, border: `1.5px solid ${s.border}` }}>
-              <div className="text-2xl mb-2">{s.emoji}</div>
+              <div className="mb-2 text-3xl leading-none">{s.icon}</div>
               <div className="font-900 text-2xl leading-none"
                 style={{ fontFamily: 'var(--font-fraunces)', color: s.color, letterSpacing: '-0.02em' }}>
                 {s.nilai}
@@ -74,23 +84,24 @@ export default function ProgressPage() {
           ))}
         </div>
 
-        {/* Savings projection */}
+        {/* Savings projection — omitted for habits without money tracking */}
+        {config.hasMoneyTracking && (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}>
           <div className="rounded-[24px] p-5" style={{ background: 'var(--card)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)' }}>
             <h3 className="text-sm font-800 mb-4" style={{ fontFamily: 'var(--font-nunito)', color: 'var(--text)' }}>
-              💸 Proyeksi Penghematan
+              💸 {locale === 'en' ? 'Savings Projection' : 'Proyeksi Penghematan'}
             </h3>
             <div className="grid grid-cols-3 gap-3">
               {[
-                { period: '1 Bulan',  days: 30 },
-                { period: '6 Bulan', days: 180 },
-                { period: '1 Tahun', days: 365 },
+                { period: locale === 'en' ? '1 Month'  : '1 Bulan',  days: 30 },
+                { period: locale === 'en' ? '6 Months' : '6 Bulan', days: 180 },
+                { period: locale === 'en' ? '1 Year'   : '1 Tahun', days: 365 },
               ].map(({ period, days }) => {
                 const amount = (stats.moneySaved / Math.max(1, stats.diffDays)) * days
                 return (
                   <div key={period} className="text-center py-3 rounded-2xl"
                     style={{ background: 'var(--amber-pale)' }}>
-                    <div className="font-900 text-base" style={{ fontFamily: 'var(--font-fraunces)', color: 'var(--amber)', letterSpacing: '-0.02em' }}>
+                    <div className="font-900 text-base" style={{ fontFamily: 'var(--font-fraunces)', color: 'var(--amber-strong)', letterSpacing: '-0.02em' }}>
                       {formatRupiah(amount)}
                     </div>
                     <div className="text-[10px] font-700 mt-1" style={{ color: 'var(--text-3)' }}>{period}</div>
@@ -100,12 +111,13 @@ export default function ProgressPage() {
             </div>
           </div>
         </motion.div>
+        )}
 
         {/* Health timeline */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-800" style={{ fontFamily: 'var(--font-nunito)', color: 'var(--text)' }}>
-              🩺 Pemulihan Kesehatan
+              🩺 {t('achievements.bodyRecoveryHeader')}
             </h2>
             <span className="text-xs font-800 px-2.5 py-1 rounded-full"
               style={{ background: 'var(--green-pale)', color: 'var(--green-mid)', border: '1px solid var(--green-tint)' }}>
@@ -124,7 +136,7 @@ export default function ProgressPage() {
                   boxShadow: m.achieved ? '0 2px 8px rgba(61,190,143,0.1)' : 'var(--shadow-sm)',
                 }}>
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: m.achieved ? 'white' : 'var(--cream)', boxShadow: m.achieved ? 'var(--shadow-sm)' : 'none' }}>
+                  style={{ background: m.achieved ? 'var(--card)' : 'var(--cream)', boxShadow: m.achieved ? 'var(--shadow-sm)' : 'none' }}>
                   <span style={{ fontSize: '1.2rem', filter: m.achieved ? 'none' : 'grayscale(1)', opacity: m.achieved ? 1 : 0.35 }}>
                     {m.icon}
                   </span>

@@ -3,6 +3,10 @@ import type { Metadata, Viewport } from 'next'
 import { Nunito } from 'next/font/google'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { UserDataProvider } from '@/contexts/UserDataContext'
+import { HabitProvider } from '@/habits/HabitProvider'
+import { UnlockProvider } from '@/habits/UnlockContext'
+import { I18nProvider } from '@/i18n/I18nProvider'
+import { ThemeProvider, THEME_FOUC_SCRIPT } from '@/theme/ThemeProvider'
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
 
 const nunito = Nunito({
@@ -13,13 +17,13 @@ const nunito = Nunito({
 })
 
 export const metadata: Metadata = {
-  title: 'Napas Baru: Bebas dari Rokok',
-  description: 'Lacak perjalanan bebas rokokmu, hemat uang, dan dapatkan kembali kesehatanmu satu hari demi satu hari.',
+  title: 'Breaking the Habit',
+  description: 'Lacak kebiasaan yang ingin kamu tinggalkan. Satu hari pada satu waktu.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Napas Baru',
+    title: 'Breaking the Habit',
     startupImage: '/icons/icon.svg',
   },
   icons: {
@@ -39,21 +43,38 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#FAF7F0',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#FAF7F0' },
+    { media: '(prefers-color-scheme: dark)',  color: '#14110C' },
+  ],
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id">
+    <html lang="id" suppressHydrationWarning>
+      <head>
+        {/* Runs before React hydrates — sets the `dark` class on <html>
+            based on saved preference or system setting so the first paint
+            already matches the user's choice (no light-flash on reload). */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_FOUC_SCRIPT }} />
+      </head>
       <body className={nunito.variable}>
-        <AuthProvider>
-          <UserDataProvider>
-            <ServiceWorkerRegistration />
-            <div className="mx-auto max-w-[430px] min-h-dvh relative">
-              {children}
-            </div>
-          </UserDataProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <I18nProvider>
+            <AuthProvider>
+              <UserDataProvider>
+                <UnlockProvider>
+                  <HabitProvider>
+                    <ServiceWorkerRegistration />
+                    <div className="mx-auto max-w-[430px] min-h-dvh relative">
+                      {children}
+                    </div>
+                  </HabitProvider>
+                </UnlockProvider>
+              </UserDataProvider>
+            </AuthProvider>
+          </I18nProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
