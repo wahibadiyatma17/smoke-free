@@ -2,7 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { motion } from 'framer-motion'
 import { useI18n } from '@/i18n/I18nProvider'
+import { hapticTap } from '@/lib/haptics'
 import type { MessageKey } from '@/i18n/types'
 
 function HomeIcon({ active }: { active: boolean }) {
@@ -69,22 +71,36 @@ export function Navigation() {
           {navItems.map(({ href, Icon, key }) => {
             const active = pathname === href
             return (
-              <Link key={href} href={href}
-                className="flex flex-col items-center gap-0.5 px-4 py-2 rounded-[20px] transition-all duration-200 relative"
-                style={active ? { background: 'var(--green-pale)' } : {}}
+              <Link key={href} href={href} onClick={hapticTap}
+                className="flex flex-col items-center gap-0.5 px-4 py-2 rounded-[20px] relative"
               >
-                <span style={{ color: active ? 'var(--green-mid)' : 'var(--text-3)' }}>
-                  <Icon active={active} />
-                </span>
-                <span
-                  className="text-xs font-700 tracking-wide"
-                  style={{
-                    fontFamily: 'var(--font-nunito)',
-                    color: active ? 'var(--green-mid)' : 'var(--text-3)',
-                  }}
+                {/* Shared pill slides between tabs on route change */}
+                {active && (
+                  <motion.span
+                    layoutId="nav-active-pill"
+                    className="absolute inset-0 rounded-[20px]"
+                    style={{ background: 'var(--green-pale)' }}
+                    transition={{ type: 'spring', damping: 30, stiffness: 420 }}
+                  />
+                )}
+                <motion.span
+                  whileTap={{ scale: 0.88 }}
+                  transition={{ type: 'spring', damping: 20, stiffness: 500 }}
+                  className="relative flex flex-col items-center gap-0.5"
                 >
-                  {t(key)}
-                </span>
+                  <span className="transition-colors duration-200" style={{ color: active ? 'var(--green-mid)' : 'var(--text-3)' }}>
+                    <Icon active={active} />
+                  </span>
+                  <span
+                    className="text-xs font-700 tracking-wide transition-colors duration-200"
+                    style={{
+                      fontFamily: 'var(--font-nunito)',
+                      color: active ? 'var(--green-mid)' : 'var(--text-3)',
+                    }}
+                  >
+                    {t(key)}
+                  </span>
+                </motion.span>
               </Link>
             )
           })}

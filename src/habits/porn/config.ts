@@ -12,6 +12,7 @@ import { pornCopy } from './copy'
 import { pornTheme } from './theme'
 import { pornIconPack } from './iconPack'
 import { pornOnboarding } from './onboarding'
+import { getPornPractices } from './practices'
 
 // Internal habit id stays 'porn' so Firestore data and localStorage shapes don't
 // need migration. User-facing label is the more discreet "PMO" (Porn,
@@ -43,6 +44,7 @@ export function buildPornConfig(locale: Locale): HabitConfig<PornData> {
     copy: pornCopy(locale),
     iconPack: pornIconPack,
     onboarding: pornOnboarding(locale),
+    dailyPractices: getPornPractices(locale),
     hasMoneyTracking: false,
     constructData: ({ quitDate, unitsCount, motivation, privacy, pinHash, pinSalt }) => ({
       quitDate,

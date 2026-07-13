@@ -15,7 +15,7 @@ import { generatePinSalt, hashPin, isValidPinFormat } from '@/habits/pin'
 import { useI18n } from '@/i18n/I18nProvider'
 import type { HabitConfig, HabitData, HabitId, OnboardingStepKind } from '@/habits/types'
 
-const VALID_HABIT_IDS: HabitId[] = ['smoking', 'alcohol', 'porn']
+const VALID_HABIT_IDS: HabitId[] = ['smoking', 'alcohol', 'porn', 'sugar']
 
 export default function OnboardingPage() {
   return (

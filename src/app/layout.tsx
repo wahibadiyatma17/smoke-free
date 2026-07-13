@@ -1,6 +1,6 @@
 import './globals.css'
 import type { Metadata, Viewport } from 'next'
-import { Nunito } from 'next/font/google'
+import { Fraunces, Nunito } from 'next/font/google'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { UserDataProvider } from '@/contexts/UserDataContext'
 import { HabitProvider } from '@/habits/HabitProvider'
@@ -13,6 +13,15 @@ const nunito = Nunito({
   subsets: ['latin'],
   variable: '--font-nunito',
   weight: ['400', '500', '600', '700', '800'],
+  display: 'swap',
+})
+
+// Display serif for headings & hero numbers — referenced across the app as
+// var(--font-fraunces). Variable font, so all weights (incl. 800/900) ship
+// in one file.
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-fraunces',
   display: 'swap',
 })
 
@@ -58,7 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             already matches the user's choice (no light-flash on reload). */}
         <script dangerouslySetInnerHTML={{ __html: THEME_FOUC_SCRIPT }} />
       </head>
-      <body className={nunito.variable}>
+      <body className={`${nunito.variable} ${fraunces.variable}`}>
         <ThemeProvider>
           <I18nProvider>
             <AuthProvider>

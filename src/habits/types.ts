@@ -1,6 +1,7 @@
 import type { Timestamp } from 'firebase/firestore'
+import type { DailyPractice } from './common/practices'
 
-export type HabitId = 'smoking' | 'alcohol' | 'porn'
+export type HabitId = 'smoking' | 'alcohol' | 'porn' | 'sugar'
 
 export interface HabitInputs {
   quitDate: Timestamp
@@ -66,14 +67,39 @@ export interface PornData extends BaseHabitData {
   pinSalt?: string
 }
 
+export interface SugarData extends BaseHabitData {
+  /** Sugary drinks/snacks per day (es teh manis, boba, soda, sweet snacks). */
+  drinksPerDay: number
+  pricePerDrink: number
+}
+
 export type HabitDataMap = {
   smoking: SmokingData
   alcohol: AlcoholData
   porn: PornData
+  sugar: SugarData
 }
 
 export type HabitData = HabitDataMap[HabitId]
 export type HabitProfiles = Partial<HabitDataMap>
+
+/**
+ * Profile-level gamification state (global "showing up", not per-habit).
+ * All fields are JSON-safe (numbers + 'YYYY-MM-DD' / 'YYYY-MM' strings) so
+ * they persist cleanly through both Firestore and guest localStorage.
+ */
+export interface GamificationState {
+  xp: number
+  level: number
+  lastCheckInDate: string | null
+  checkInStreak: number
+  longestCheckInStreak: number
+  totalCheckIns: number
+  freezesRemaining: number
+  freezeMonth: string
+  questDate: string | null
+  questsDone: string[]
+}
 
 export interface UserProfile {
   uid: string
@@ -82,6 +108,7 @@ export interface UserProfile {
   photoURL: string | null
   activeHabitId: HabitId
   habits: HabitProfiles
+  gamification?: GamificationState
   createdAt: Timestamp
   updatedAt: Timestamp
 }
@@ -280,4 +307,10 @@ export interface HabitConfig<D extends HabitData = HabitData> {
   previewYearlySavings: (unitsCount: number, priceValue: number) => number
   /** Secondary line under the "units avoided" stat card on the progress page. */
   formatProgressUnitsSub: (stats: HabitStats, data: D) => string
+  /** Optional per-day rotating micro-actions. When present, the dashboard
+   *  shows a DailyPracticeCard for this habit. */
+  dailyPractices?: DailyPractice[]
+  /** Optional evidence-based one-liners shown during the craving (SOS)
+   *  moment to reassure the user that the urge is temporary & beatable. */
+  cravingScience?: string[]
 }

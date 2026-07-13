@@ -8,6 +8,7 @@ import { useUserData } from '@/contexts/UserDataContext'
 import { getHabitConfig, getEnabledHabitConfigs } from '@/habits/registry'
 import { useUnlock } from '@/habits/UnlockContext'
 import { useI18n } from '@/i18n/I18nProvider'
+import { hapticBump } from '@/lib/haptics'
 import type { HabitConfig, HabitData, HabitId } from '@/habits/types'
 
 interface OnboardedHabit {
@@ -62,6 +63,7 @@ export function HabitSelector() {
   const handleSelect = async (habitId: HabitId) => {
     setOpen(false)
     if (habitId !== activeId) {
+      hapticBump()
       await setActiveHabit(habitId)
     }
   }

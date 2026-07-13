@@ -1,10 +1,8 @@
 import type { Locale } from '@/i18n/types'
+import type { DailyPractice } from '../common/practices'
+import { pickDailyPractice } from '../common/practices'
 
-export interface DailyPractice {
-  cue: string
-  context: string
-  emoji: string
-}
+export type { DailyPractice }
 
 const LOCALIZED: Record<Locale, DailyPractice[]> = {
   id: [
@@ -49,9 +47,5 @@ export function getPornPractices(locale: Locale): DailyPractice[] {
 
 /** Deterministic daily pick — same practice on the same calendar day each year. */
 export function getDailyPractice(locale: Locale, date = new Date()): DailyPractice {
-  const list = LOCALIZED[locale]
-  const start = new Date(date.getFullYear(), 0, 0)
-  const diff = date.getTime() - start.getTime()
-  const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24))
-  return list[dayOfYear % list.length]
+  return pickDailyPractice(LOCALIZED[locale] ?? LOCALIZED.id, date)
 }

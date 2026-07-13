@@ -3,6 +3,7 @@ import type { HabitConfig, HabitId } from './types'
 import { buildSmokingConfig } from './smoking/config'
 import { buildAlcoholConfig } from './alcohol/config'
 import { buildPornConfig } from './porn/config'
+import { buildSugarConfig } from './sugar/config'
 import { isHabitEnabled } from './flags'
 
 type Builder = (locale: Locale) => HabitConfig
@@ -11,6 +12,7 @@ const BUILDERS: Partial<Record<HabitId, Builder>> = {
   smoking: (l) => buildSmokingConfig(l) as HabitConfig,
   alcohol: (l) => buildAlcoholConfig(l) as HabitConfig,
   porn:    (l) => buildPornConfig(l) as HabitConfig,
+  sugar:   (l) => buildSugarConfig(l) as HabitConfig,
 }
 
 // Cache built configs per (habitId, locale). Each locale swap rebuilds on

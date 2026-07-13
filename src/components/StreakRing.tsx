@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { useI18n } from '@/i18n/I18nProvider'
+import { useCountUp } from '@/lib/useCountUp'
 
 interface StreakRingProps {
   days: number
@@ -12,6 +13,7 @@ interface StreakRingProps {
 
 export function StreakRing({ days, hours, minutes, seconds }: StreakRingProps) {
   const { t } = useI18n()
+  const displayDays = useCountUp(days, 1100)
   const size = 220
   const strokeWidth = 13
   const radius = (size - strokeWidth) / 2
@@ -23,16 +25,18 @@ export function StreakRing({ days, hours, minutes, seconds }: StreakRingProps) {
     <div className="flex flex-col items-center select-none">
       <div className="relative float" style={{ width: size, height: size }}>
 
-        {/* Glow halo behind ring */}
-        <div className="absolute inset-3 rounded-full pointer-events-none"
-          style={{ background: 'radial-gradient(circle, rgba(61,190,143,0.12) 30%, transparent 70%)' }} />
+        {/* Glow halo behind ring — follows the active habit's accent, breathes softly */}
+        <motion.div className="absolute inset-3 rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--green) 16%, transparent) 30%, transparent 70%)' }}
+          animate={{ scale: [1, 1.06, 1], opacity: [0.7, 1, 0.7] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }} />
 
         <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
           {/* Background track */}
           <circle cx={size/2} cy={size/2} r={radius}
             fill="none" stroke="var(--border)" strokeWidth={strokeWidth} />
 
-          {/* Progress arc - coral to green gradient */}
+          {/* Progress arc - coral to green gradient, soft accent glow */}
           <motion.circle
             cx={size/2} cy={size/2} r={radius}
             fill="none"
@@ -43,6 +47,7 @@ export function StreakRing({ days, hours, minutes, seconds }: StreakRingProps) {
             initial={{ strokeDashoffset: circumference }}
             animate={{ strokeDashoffset: offset }}
             transition={{ duration: 1.8, ease: [0.34, 1.2, 0.64, 1], delay: 0.4 }}
+            style={{ filter: 'drop-shadow(0 0 6px color-mix(in srgb, var(--green) 35%, transparent))' }}
           />
 
           {/* Animated dot at tip */}
@@ -85,7 +90,7 @@ export function StreakRing({ days, hours, minutes, seconds }: StreakRingProps) {
                 letterSpacing: '-0.03em',
               }}
             >
-              {days}
+              {displayDays}
             </div>
             <div
               className="text-xs font-700 tracking-widest uppercase mt-1"

@@ -10,6 +10,7 @@ export const HABIT_FLAGS: Record<HabitId, boolean> = {
   smoking: true,
   alcohol: true,
   porn: true,
+  sugar: true,
 }
 
 export function isHabitEnabled(id: HabitId): boolean {

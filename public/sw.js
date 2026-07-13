@@ -1,4 +1,4 @@
-const CACHE_NAME = 'napas-baru-v1';
+const CACHE_NAME = 'breaking-habit-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',

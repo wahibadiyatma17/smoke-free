@@ -140,8 +140,8 @@
   --text-3:      #A99888;
 
   /* Borders — visible definition on dark surfaces. --border renders at
-     ~2.5:1 (decorative divider), --border-mid at ~4:1 (attention). */
-  --border:      #3A2F26;
+     ~3:1 (decorative divider), --border-mid at ~4:1 (attention). */
+  --border:      #453729;
   --border-mid:  #5A4A3C;
 
   /* Strong variants on dark become the brighter default accent since the
@@ -150,10 +150,13 @@
   --green-strong:  #6BE8B7;
   --coral-strong:  #FFA184;
 
+  /* Layered elevation: ambient drop + hairline outline + inner top
+     highlight so cards read as raised surfaces instead of flat patches
+     on the near-black background. */
   --shadow-sm:   0 1px 4px rgba(0,0,0,0.5);
-  --shadow-md:   0 4px 16px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.45);
-  --shadow-lg:   0 8px 32px rgba(0,0,0,0.65), 0 2px 8px rgba(0,0,0,0.45);
-  --shadow-card: 0 2px 12px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.06);
+  --shadow-md:   0 4px 16px rgba(0,0,0,0.6), 0 1px 4px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05);
+  --shadow-lg:   0 8px 32px rgba(0,0,0,0.65), 0 2px 8px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.05);
 
   --focus-ring:  0 0 0 3px color-mix(in srgb, var(--coral) 55%, transparent);
 
@@ -256,6 +259,16 @@ body {
 /* ── Font helpers ─────────────────────────────────────────── */
 .font-display { font-family: var(--font-nunito), 'Nunito', sans-serif; }
 .font-body    { font-family: var(--font-nunito), 'Nunito', sans-serif; }
+
+/* Numeric font-weight utilities — the app uses font-500…font-900 classes
+   throughout, which are not Tailwind defaults. Defined once here so every
+   heading/label renders at its intended weight. */
+.font-300 { font-weight: 300; }
+.font-500 { font-weight: 500; }
+.font-600 { font-weight: 600; }
+.font-700 { font-weight: 700; }
+.font-800 { font-weight: 800; }
+.font-900 { font-weight: 900; }
 
 /* ── Input ────────────────────────────────────────────────── */
 .input-warm {

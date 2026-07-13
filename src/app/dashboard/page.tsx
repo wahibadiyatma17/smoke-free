@@ -17,6 +17,13 @@ import { HabitSelector } from '@/components/HabitSelector'
 import { PinUnlockSheet } from '@/components/PinUnlockSheet'
 import { MindfulPausePanel } from '@/components/MindfulPausePanel'
 import { DailyPracticeCard } from '@/components/DailyPracticeCard'
+import { CelebrationBurst } from '@/components/CelebrationBurst'
+import { GrowthCompanion } from '@/components/GrowthCompanion'
+import { DailyQuestsCard } from '@/components/DailyQuestsCard'
+import { DailyCheckInSheet } from '@/components/DailyCheckInSheet'
+import { LevelUpToast, type LevelUpInfo } from '@/components/LevelUpToast'
+import { useGamification } from '@/gamification/useGamification'
+import { hapticSuccess } from '@/lib/haptics'
 import { useUnlock } from '@/habits/UnlockContext'
 import { useI18n } from '@/i18n/I18nProvider'
 
@@ -32,6 +39,9 @@ export default function DashboardPage() {
   const [quoteIndex, setQuoteIndex] = useState(0)
   const [showCraving, setShowCraving] = useState(false)
   const [berhasil, setBerhasil] = useState(false)
+  const [burstCount, setBurstCount] = useState(0)
+  const [levelUp, setLevelUp] = useState<LevelUpInfo | null>(null)
+  const gamification = useGamification()
   const [randomTips, setRandomTips] = useState<TipItem[]>([])
   const [showReset, setShowReset] = useState(false)
   const [resetDate, setResetDate] = useState(new Date().toISOString().split('T')[0])
@@ -115,6 +125,12 @@ export default function DashboardPage() {
 
   const handleBerhasil = () => {
     setBerhasil(true)
+    setBurstCount(c => c + 1)
+    hapticSuccess()
+    // Reward resisting a craving with XP (relapse-safe: only ever adds).
+    gamification?.awardXp(20).then(r => {
+      if (r.leveledUp) setLevelUp({ key: Date.now(), level: r.newLevel, tierName: r.newTier?.name[locale] })
+    })
     setTimeout(() => { setShowCraving(false); setBerhasil(false) }, 2800)
   }
 
@@ -204,6 +220,10 @@ export default function DashboardPage() {
           </motion.button>
         </motion.div>
 
+        {/* Gamification: growth companion + daily quests */}
+        <GrowthCompanion />
+        <DailyQuestsCard />
+
         {/* Stats - money card is skipped for habits without money tracking */}
         <div className={`grid gap-3 ${config.hasMoneyTracking ? 'grid-cols-2' : 'grid-cols-1'}`}>
           {config.hasMoneyTracking && (
@@ -237,8 +257,8 @@ export default function DashboardPage() {
           </motion.div>
         </div>
 
-        {/* PMO-specific: daily mindfulness cue above the information sections */}
-        {habitId === 'porn' && (
+        {/* Daily micro-action cue — for habits that define dailyPractices (PMO, sugar) */}
+        {!!config.dailyPractices?.length && (
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <DailyPracticeCard />
           </motion.div>
@@ -355,6 +375,10 @@ export default function DashboardPage() {
             <motion.div
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 380 }}
+              drag="y"
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={{ top: 0, bottom: 0.6 }}
+              onDragEnd={(_, info) => { if (info.offset.y > 110) setShowCraving(false) }}
               className="w-full max-w-[430px] mx-auto rounded-t-[32px] px-6 pt-6 pb-10 max-h-[88dvh] overflow-y-auto"
               style={{ background: 'var(--cream)' }}
             >
@@ -366,8 +390,9 @@ export default function DashboardPage() {
                   <motion.div key="success"
                     initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
                     transition={{ type: 'spring', stiffness: 300 }}
-                    className="flex flex-col items-center text-center py-8"
+                    className="relative flex flex-col items-center text-center py-8"
                   >
+                    <CelebrationBurst trigger={burstCount} />
                     <motion.div
                       initial={{ scale: 0 }} animate={{ scale: 1 }}
                       transition={{ type: 'spring', stiffness: 400, delay: 0.1 }}
@@ -399,6 +424,16 @@ export default function DashboardPage() {
                         </svg>
                       </button>
                     </div>
+
+                    {!!config.cravingScience?.length && (
+                      <div className="mt-4 rounded-2xl px-4 py-3 flex items-start gap-2.5"
+                        style={{ background: 'var(--green-pale)', border: '1px solid var(--green-tint)' }}>
+                        <span className="text-base leading-none mt-0.5">💡</span>
+                        <p className="text-xs font-600 leading-snug" style={{ color: 'var(--green-dark)' }}>
+                          {config.cravingScience[Math.floor(stats.diffSeconds) % config.cravingScience.length]}
+                        </p>
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-2 gap-2.5 mt-5 mb-5">
                       {randomTips.map((s, i) => (
@@ -506,6 +541,12 @@ export default function DashboardPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* On-open daily check-in (self-gating) + level-up toast */}
+      <DailyCheckInSheet onResult={r => {
+        if (r.leveledUp || r.newTier) setLevelUp({ key: Date.now(), level: r.newLevel, tierName: r.newTier?.name[locale] })
+      }} />
+      <LevelUpToast info={levelUp} onDismiss={() => setLevelUp(null)} />
 
       <Navigation />
     </div>

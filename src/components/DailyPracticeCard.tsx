@@ -2,21 +2,29 @@
 
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { getDailyPractice } from '@/habits/porn/practices'
+import { pickDailyPractice } from '@/habits/common/practices'
+import { useActiveHabit } from '@/habits/useActiveHabit'
 import { useI18n } from '@/i18n/I18nProvider'
 
 /**
- * PMO-specific: one rotating mindfulness / digital-hygiene cue per day.
- * Soft dawn gradient, minimal interaction — invites contemplation rather
- * than action. Contrasts the urgent SOS card on smoking/alcohol.
+ * One rotating micro-action / mindfulness cue per day, driven by the active
+ * habit's `config.dailyPractices`. Soft dawn gradient, minimal interaction —
+ * invites a small daily win. Renders nothing if the habit has no practices.
  */
 export function DailyPracticeCard() {
   const { locale, t } = useI18n()
-  const practice = useMemo(() => getDailyPractice(locale), [locale])
+  const { config } = useActiveHabit()
+  const practices = config?.dailyPractices
+  const practice = useMemo(
+    () => (practices && practices.length ? pickDailyPractice(practices) : null),
+    [practices],
+  )
   const today = useMemo(
     () => new Date().toLocaleDateString(locale === 'en' ? 'en-US' : 'id-ID', { weekday: 'long', day: 'numeric', month: 'long' }),
     [locale],
   )
+
+  if (!practice) return null
 
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
